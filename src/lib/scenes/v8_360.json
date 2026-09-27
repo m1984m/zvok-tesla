@@ -1,9 +1,19 @@
 {
-  "id": "v8",
+  "id": "v8_360",
   "name": "V8",
-  "subtitle": "ravna gred · 4,5 l · 8500 rpm",
+  "subtitle": "pravi posnetek · globok",
+  "engine": "v8_360",
   "tier": "free",
-  "engine": "v8",
+  "ambience": {
+    "type": "none",
+    "gain": 0,
+    "lowpassHz": 4000
+  },
+  "acoustics": {
+    "ir": "street",
+    "decayS": 0.4,
+    "wet": 0.05
+  },
   "synth": {
     "cylinders": 8,
     "pulseDecay": 10,
@@ -23,16 +33,6 @@
     "bodyHz": 85,
     "shelfDb": 4.5,
     "shelfHz": 150
-  },
-  "ambience": {
-    "type": "none",
-    "gain": 0,
-    "lowpassHz": 4000
-  },
-  "acoustics": {
-    "ir": "street",
-    "decayS": 0.5,
-    "wet": 0.08
   },
   "theme": {
     "accent": "#ffc21a",

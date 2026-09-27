@@ -1,6 +1,6 @@
 import type { Scene } from './types'
 
-const ORDER = ['v12', 'v8']
+const ORDER = ['sportni', 'v8_360']
 
 const mods = import.meta.glob<Scene>('./*.json', { eager: true, import: 'default' })
 

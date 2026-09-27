@@ -63,7 +63,7 @@ const f6 = await page.evaluate(async () => {
   }, 10)
   const wait = (ms) => new Promise((r) => setTimeout(r, ms))
   await wait(800)
-  const names = ['V8', 'V12', 'V8', 'V12', 'V8']
+  const names = ['V8', 'Športni', 'V8', 'Športni', 'V8']
   for (const n of names) {
     ;[...document.querySelectorAll('.engines button')].find((b) => b.querySelector('b').textContent.trim() === n).click()
     await wait(900)

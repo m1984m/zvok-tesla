@@ -1,0 +1,44 @@
+{
+  "id": "sportni",
+  "name": "Športni",
+  "subtitle": "pravi posnetek · skozi prestave",
+  "engine": "sportni",
+  "tier": "free",
+  "ambience": {
+    "type": "none",
+    "gain": 0,
+    "lowpassHz": 4000
+  },
+  "acoustics": {
+    "ir": "street",
+    "decayS": 0.4,
+    "wet": 0.05
+  },
+  "synth": {
+    "cylinders": 8,
+    "pulseDecay": 10,
+    "brightness": 0.6,
+    "roughness": 0.08,
+    "rumble": 0.08,
+    "noise": 0.3,
+    "scream": 0.75,
+    "f1": 420,
+    "f2": 1450,
+    "reso": 0.6,
+    "crackle": 0.85,
+    "gain": 0.78,
+    "maxRpm": 8500,
+    "sub": 0.14,
+    "body": 0.3,
+    "bodyHz": 85,
+    "shelfDb": 4.5,
+    "shelfHz": 150
+  },
+  "theme": {
+    "accent": "#ff2a1a",
+    "bg": [
+      "#07080a",
+      "#15090a"
+    ]
+  }
+}

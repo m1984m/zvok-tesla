@@ -3,6 +3,7 @@ import type { Scene } from '../scenes/types'
 import { createAmbience } from './ambience'
 import { makeImpulse } from './acoustics'
 import { EngineSampler } from './engineSampler'
+import { GranularEngine } from './granular'
 
 interface SceneLayer {
   ambience: { out: GainNode; stop: () => void }
@@ -19,7 +20,7 @@ export class AudioEngine {
   ctx!: AudioContext
   private synth!: AudioWorkletNode
   private synthBus!: GainNode
-  private sampler: EngineSampler | null = null
+  private sampler: EngineSampler | GranularEngine | null = null
   private engineBus!: GainNode
   private limiter!: DynamicsCompressorNode
   private master!: GainNode
@@ -35,6 +36,7 @@ export class AudioEngine {
     this.ctx = new AudioContext({ latencyHint: 'interactive' })
     const ctx = this.ctx
     await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}worklets/engine.js`)
+    await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}worklets/granular.js`)
     this.synth = new AudioWorkletNode(ctx, 'engine', { numberOfOutputs: 1, outputChannelCount: [1] })
     this.synthBus = ctx.createGain()
     this.engineBus = ctx.createGain()
@@ -120,8 +122,8 @@ export class AudioEngine {
       }, fade * 1000 * 3)
     }
 
-    // zanke motorja, če obstajajo; do nalaganja igra sinteza
-    const sampler = await EngineSampler.load(ctx, scene.engine)
+    // pravi posnetek (granularno) ali zanke, če obstajajo; do nalaganja in kot rezerva igra sinteza
+    const sampler = (await GranularEngine.load(ctx, scene.engine)) ?? (await EngineSampler.load(ctx, scene.engine))
     if (token !== this.sceneToken) {
       sampler?.dispose()
       return

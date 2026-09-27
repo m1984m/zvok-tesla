@@ -1,0 +1,49 @@
+{
+  "url": "https://freesound.org/people/florianreichelt/sounds/457560/",
+  "title": "Acceleration of a Sports Car Engine like Ferrari or Lamborghini or Porsche",
+  "author": "florianreichelt",
+  "license": "CC0 1.0",
+  "id": "sportni",
+  "source": "raw/sportni_457560.mp3",
+  "trim": [
+    0.2,
+    15.6
+  ],
+  "calib": {
+    "hz": 320,
+    "rpm": 7800
+  },
+  "layers": {
+    "on": [
+      [
+        0.9,
+        3.6,
+        80
+      ],
+      [
+        4.0,
+        5.7,
+        232
+      ],
+      [
+        6.0,
+        7.9,
+        256
+      ],
+      [
+        8.15,
+        10.1,
+        252
+      ]
+    ],
+    "off": [
+      [
+        10.3,
+        15.3,
+        275
+      ]
+    ]
+  },
+  "idle": null,
+  "plotMaxHz": 600
+}

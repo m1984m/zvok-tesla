@@ -16,7 +16,7 @@ export const car = $state({
   peakBrake: 0,
   peakLat: 0,
   source: 'gps' as SourceKind,
-  sceneId: 'v12',
+  sceneId: 'sportni',
   volume: 0.8,
   started: false,
   paused: false,
