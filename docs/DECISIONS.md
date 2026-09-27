@@ -12,3 +12,4 @@
 - 2026-09-27 · F8 odpade: aplikacija je samo za Mateja, vse scene so odklenjene, brez plačil.
 - 2026-09-27 · Hosting: GitHub Pages (Matejeva izbira) namesto Cloudflare Pages; `base: './'` deluje na podpoti `/<repo>/`.
 - 2026-09-27 · F3 test klikov je v brskalniku (`scripts/check-audio.mjs`, OfflineAudioContext), F5–F7 v `scripts/check-app.mjs`. Playwright je razvojna odvisnost (Apache-2.0, samo za teste, ni v aplikaciji).
+- 2026-09-27 · Edina ciljna naprava: Model 3 (2021, HW3). HW3 je računalnik avtopilota; brskalnik teče na MCU, ki je pri letniku 2021 lahko Intel Atom (MCU2) ali AMD Ryzen (MCU3). Aplikacija mora delovati na šibkejšem Atomu: ostane samodejni padec na statično ozadje in 30 fps. Postavitev je ležeča (merilnik levo, upravljanje desno, scene spodaj). Nalaganje GPX/CSV je skrito, na voljo samo z `?dev`.

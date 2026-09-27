@@ -2,6 +2,8 @@
 
 Spletna aplikacija za brskalnik Tesle: sintetiziran zvok motorja, vezan na dejansko hitrost po GPS, simuliran menjalnik (Auto/Manual) in zvočne scene. Referenca konkurence: dribe.app, rupteur.app. Ne kopiramo njihovih sredstev, imen ali zvokov.
 
+Ciljna naprava: SAMO brskalnik Tesle Model 3, letnik 2021, HW3 (zaslon 15", ležeče). Osebna raba, vse odklenjeno.
+
 Lastnik: Matej Moharič. Okolje: Windows, Claude Code CLI, MCP: Context7, GitHub, Tavily.
 
 ---

@@ -29,6 +29,8 @@
     }
   })
 
+  // nalaganje datotek samo za razvoj (?dev); v avtu ni datotek
+  const DEV = new URLSearchParams(location.search).has('dev')
   const scene = $derived(sceneById(car.sceneId))
 
   async function start() {
@@ -145,7 +147,7 @@
         </div>
       {/if}
 
-      {#if car.source === 'replay'}
+      {#if car.source === 'replay' && DEV}
         <label class="file">
           Naloži GPX ali CSV
           <input type="file" accept=".gpx,.csv,.txt" onchange={loadFile} />
