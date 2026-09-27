@@ -9,6 +9,8 @@ const JITTER_S = 0.012
 const RATE_MIN = 0.5
 const RATE_MAX = 2
 const OUT_RMS = 0.12
+const NORM_MIN = 0.08 // izenačitev glasnosti zrn: dovolj širok razpon, da glasen del posnetka (npr. speljevanje) ne izstopa
+const NORM_MAX = 6
 const CANDIDATE_TOL = 0.015 // zrna znotraj ±1,5 % obratov so enakovredna (naključna izbira → raznolikost)
 
 class Layer {
@@ -104,7 +106,7 @@ class GranularProcessor extends AudioWorkletProcessor {
       rate = r / rg
     }
     rate = Math.min(RATE_MAX, Math.max(RATE_MIN, rate))
-    const norm = Math.min(4, Math.max(0.25, this.targetRms / (this.rmsAt(t) + 1e-6)))
+    const norm = Math.min(NORM_MAX, Math.max(NORM_MIN, this.targetRms / (this.rmsAt(t) + 1e-6)))
     const start = t * sampleRate - (this.len / 2) * rate
     if (start < 0 || start + this.len * rate >= this.pcm.length - 1) return
     this.grains.push({ layer: layerName, pos: start, rate, i: 0, amp: amp * norm })
