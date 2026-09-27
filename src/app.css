@@ -1,4 +1,43 @@
-:root { color-scheme: light dark; --bg: #f4f4f2; --fg: #111; font-family: system-ui, sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #0d0d0f; --fg: #eee; } }
-body { margin: 0; background: var(--bg); color: var(--fg); }
-main { padding: 16px; }
+:root {
+  color-scheme: light dark;
+  --bg: #0d0d0f;
+  --fg: #f2f2f2;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f4f2;
+    --fg: #111;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  user-select: none;
+  touch-action: manipulation;
+}
+button {
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+  cursor: pointer;
+}
+button.on {
+  background: var(--accent, #4fb0e0);
+  color: #111;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
