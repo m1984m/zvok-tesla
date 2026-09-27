@@ -91,7 +91,7 @@
     const dpr = Math.min(window.devicePixelRatio || 1, 2) * car.uiScale
     const s = Math.max(1, Math.round(size))
     const W = Math.round(s * dpr)
-    if (canvas.width !== W) canvas.width = canvas.height = W
+    if (canvas.width !== W || canvas.height !== W) canvas.width = canvas.height = W
     c.setTransform(1, 0, 0, 1, 0, 0)
     c.clearRect(0, 0, canvas.width, canvas.height)
     c.drawImage(staticLayer(s, dpr), 0, 0)

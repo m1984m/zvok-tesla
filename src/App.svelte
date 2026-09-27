@@ -1,7 +1,7 @@
 <script lang="ts">
   import { car, type SourceKind } from './lib/state.svelte'
   import { audio } from './lib/audio/context'
-  import { setSource, startLoop, stopLoop } from './lib/engine'
+  import { playDrive, setSource, startLoop, stopLoop } from './lib/engine'
   import { scenes, sceneById } from './lib/scenes/registry'
   import { manualInput, type Pedal } from './lib/telemetry/manual'
   import { parseTrack } from './lib/telemetry/replay'
@@ -48,7 +48,8 @@
       await audio.start()
       if (!car.started) {
         await audio.setScene(scene)
-        await setSource(car.source)
+        if (car.source === 'replay') await playDrive(car.drive)
+        else await setSource(car.source)
         car.started = true
       }
       audio.setVolume(car.volume)
@@ -98,12 +99,11 @@
     return () => document.removeEventListener('visibilitychange', onVis)
   })
 
-  const SOURCES: [SourceKind, string, string][] = [
-    ['gps', 'GPS', 'hitrost iz satelitov'],
-    ['replay', 'Demo vožnja', 'posnetek, za preizkus na mestu'],
-    ['manual', 'Ročni plin', 'gumba plin in zavora (razvoj)'],
-  ].filter((x) => DEV || x[0] !== 'manual') as [SourceKind, string, string][]
-  const sourceLabel = $derived(SOURCES.find((s) => s[0] === car.source)?.[1] ?? '')
+  const DRIVES: [string, string][] = [
+    ['mesto', 'Mesto'],
+    ['regionalna', 'Regionalna'],
+    ['avtocesta', 'Avtocesta'],
+  ]
   const gpsState = $derived(car.source !== 'gps' ? '' : car.error ? 'err' : car.stale || car.v === 0 ? 'wait' : 'ok')
 </script>
 
@@ -146,14 +146,22 @@
       {/each}
     </div>
 
+    <div class="seg drives" role="group" aria-label="Vir hitrosti">
+      <button class:on={car.source === 'gps'} onclick={() => pickSource('gps')}><i class="dot {gpsState}"></i>GPS</button>
+      {#each DRIVES as [id, label] (id)}
+        <button class:on={car.source === 'replay' && car.drive === id} onclick={() => playDrive(id)}>{label}<small>20 s</small></button>
+      {/each}
+      {#if DEV}
+        <button class:on={car.source === 'manual'} onclick={() => pickSource('manual')}>Plin</button>
+        <button onclick={() => (menu = !menu)}>…</button>
+      {/if}
+    </div>
+
     <label class="vol">
       <span>GLASNOST</span>
       <input type="range" min="0" max="1" step="0.05" bind:value={car.volume} aria-label="Glasnost" />
     </label>
 
-    <button class="src" onclick={() => (menu = !menu)} aria-expanded={menu}>
-      <i class="dot {gpsState}"></i>{sourceLabel}
-    </button>
   </footer>
 
   {#if car.source === 'manual'}
@@ -167,16 +175,11 @@
     </div>
   {/if}
 
-  {#if menu}
+  {#if menu && DEV}
     <button class="scrim" onclick={() => (menu = false)} aria-label="Zapri"></button>
-    <div class="menu" role="dialog" aria-label="Vir hitrosti">
-      <h2>Vir hitrosti</h2>
-      {#each SOURCES as [k, label, hint] (k)}
-        <button class:on={car.source === k} onclick={() => pickSource(k)}><b>{label}</b><small>{hint}</small></button>
-      {/each}
-      {#if DEV}
-        <label class="file">Naloži GPX ali CSV <input type="file" accept=".gpx,.csv,.txt" onchange={loadFile} /></label>
-      {/if}
+    <div class="menu" role="dialog" aria-label="Razvoj">
+      <h2>Razvoj</h2>
+      <label class="file">Naloži GPX ali CSV <input type="file" accept=".gpx,.csv,.txt" onchange={loadFile} /></label>
     </div>
   {/if}
 </div>
@@ -326,6 +329,24 @@
     height: 44px;
     accent-color: var(--accent);
   }
+  .drives button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+    min-width: 120px;
+    padding: 0 16px;
+  }
+  .drives button:first-child {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .drives small {
+    font-size: 14px;
+    color: var(--mute);
+  }
   .src {
     display: flex;
     align-items: center;
@@ -401,24 +422,6 @@
     color: var(--mute);
     text-transform: uppercase;
     font-weight: 600;
-  }
-  .menu button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 14px 18px;
-    min-height: 70px;
-    text-align: left;
-  }
-  .menu button b {
-    font-size: 26px;
-  }
-  .menu button small {
-    font-size: 16px;
-    color: var(--mute);
-  }
-  .menu button.on {
-    border-color: var(--accent);
   }
   .file {
     font-size: 16px;

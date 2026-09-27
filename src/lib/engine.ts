@@ -26,10 +26,10 @@ async function sourceFor(kind: SourceKind): Promise<Source> {
   if (kind === 'gps') return gpsSource
   if (kind === 'manual') return manualSource
   if (!replaySamples) {
-    const r = await fetch(`${import.meta.env.BASE_URL}replay/demo.csv`)
+    const r = await fetch(`${import.meta.env.BASE_URL}replay/${car.drive}.csv`)
     replaySamples = parseTrack(await r.text())
   }
-  return replaySource(replaySamples)
+  return replaySource(replaySamples, false)
 }
 
 export async function setSource(kind: SourceKind, samples?: Sample[]): Promise<void> {
@@ -48,6 +48,17 @@ export async function setSource(kind: SourceKind, samples?: Sample[]): Promise<v
     },
     (msg) => (car.error = msg),
   )
+}
+
+/** Zaženi eno od 20-s voženj (static/replay/<id>.csv) od začetka. */
+export async function playDrive(id: string): Promise<void> {
+  car.drive = id
+  car.driveRun++
+  const r = await fetch(`${import.meta.env.BASE_URL}replay/${id}.csv`)
+  await setSource('replay', parseTrack(await r.text()))
+  gearbox.gear = 1
+  rpmOut = DRIVETRAIN.idleRpm
+  resetPeaks()
 }
 
 export function resetPeaks(): void {

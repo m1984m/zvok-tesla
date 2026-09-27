@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { parseCsv, parseGpx, simulate } from './replay'
 import { haversineM } from './gps'
 
-const demo = parseCsv(readFileSync('static/replay/demo.csv', 'utf8'))
+const demo = parseCsv(readFileSync('static/replay/avtocesta.csv', 'utf8'))
 
 describe('replay', () => {
   it('dva zagona dasta enako krivuljo v/a', () => {
-    expect(demo.length).toBeGreaterThan(50)
+    expect(demo.length).toBeGreaterThan(15)
     expect(simulate(demo, 1 / 30)).toEqual(simulate(demo, 1 / 30))
   })
   it('krivulja med GPS vzorci je zvezna (brez skokov)', () => {

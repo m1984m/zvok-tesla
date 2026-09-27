@@ -51,8 +51,8 @@ export function simulate(samples: Sample[], stepS: number): { t: number; v: numb
   return out
 }
 
-/** Predvaja posnetek v realnem času, na koncu začne znova. */
-export function replaySource(samples: Sample[]): Source {
+/** Predvaja posnetek v realnem času; loop = false: enkrat, nato ni več vzorcev (hitrost se drži). */
+export function replaySource(samples: Sample[], loop = true): Source {
   return (emit) => {
     if (!samples.length) return () => {}
     const t0 = samples[0].t
@@ -67,6 +67,10 @@ export function replaySource(samples: Sample[]): Source {
         if (ts > el) break
         emit({ t: start + ts, v: samples[i].v, heading: samples[i].heading })
         if (++i >= samples.length) {
+          if (!loop) {
+            clearInterval(id)
+            return
+          }
           i = 0
           lap++
         }

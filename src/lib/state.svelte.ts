@@ -16,6 +16,8 @@ export const car = $state({
   peakBrake: 0,
   peakLat: 0,
   source: 'gps' as SourceKind,
+  drive: 'mesto', // izbrana 20-s vožnja za poslušanje
+  driveRun: 0, // števec zagonov (ponovni zagon iste vožnje)
   sceneId: 'sportni',
   volume: 0.8,
   started: false,
