@@ -25,7 +25,7 @@
     const key = `${s}|${dpr}|${fontsReady}|${accent}`
     if (bg && bgKey === key) return bg
     bg = document.createElement('canvas')
-    bg.width = bg.height = s * dpr
+    bg.width = bg.height = Math.round(s * dpr)
     const c = bg.getContext('2d')!
     c.scale(dpr, dpr)
     const cx = s / 2
@@ -87,11 +87,11 @@
     const kmh = Math.round(car.v * 3.6)
     const c = canvas?.getContext('2d')
     if (!c) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    // ločljivost platna = dejanska velikost na zaslonu (plošča je pomanjšana) → na Atomu ne rišemo preveč točk
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) * car.uiScale
     const s = Math.max(1, Math.round(size))
-    if (canvas.width !== s * dpr) {
-      canvas.width = canvas.height = s * dpr
-    }
+    const W = Math.round(s * dpr)
+    if (canvas.width !== W) canvas.width = canvas.height = W
     c.setTransform(1, 0, 0, 1, 0, 0)
     c.clearRect(0, 0, canvas.width, canvas.height)
     c.drawImage(staticLayer(s, dpr), 0, 0)

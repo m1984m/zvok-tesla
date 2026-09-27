@@ -21,5 +21,6 @@ export const car = $state({
   started: false,
   paused: false,
   lowPower: false,
+  uiScale: 1, // pomanjšava plošče na okno
   error: '',
 })

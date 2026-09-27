@@ -10,6 +10,7 @@
   import StartOverlay from './lib/ui/StartOverlay.svelte'
   import GMeter from './lib/ui/GMeter.svelte'
   import GStats from './lib/ui/GStats.svelte'
+  import { STAGE } from './lib/config'
 
   const PREFS = 'pogon.prefs.v2'
   try {
@@ -33,6 +34,14 @@
   const DEV = new URLSearchParams(location.search).has('dev')
   const scene = $derived(sceneById(car.sceneId))
   let menu = $state(false)
+
+  // plošča STAGE.width × STAGE.height, pomanjšana v okno (sredinsko, z robovi)
+  $effect(() => {
+    const fit = () => (car.uiScale = Math.min(innerWidth / STAGE.width, innerHeight / STAGE.height))
+    fit()
+    addEventListener('resize', fit)
+    return () => removeEventListener('resize', fit)
+  })
 
   async function start() {
     try {
@@ -98,7 +107,15 @@
   const gpsState = $derived(car.source !== 'gps' ? '' : car.error ? 'err' : car.v > 0 ? 'ok' : 'wait')
 </script>
 
-<div class="app" class:low={car.lowPower} style:--accent={scene.theme.accent}>
+<div class="stage">
+<div
+  class="app"
+  class:low={car.lowPower}
+  style:--accent={scene.theme.accent}
+  style:width="{STAGE.width}px"
+  style:height="{STAGE.height}px"
+  style:transform="translate(-50%, -50%) scale({car.uiScale})"
+>
   {#if !car.started}
     <StartOverlay label="START" sub="{scene.name} · tapni za zagon" accent={scene.theme.accent} onstart={start} />
   {:else if car.paused}
@@ -163,16 +180,25 @@
     </div>
   {/if}
 </div>
+</div>
 
 <style>
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #07080a;
+  }
   .app {
     --panel: #111317;
     --line: #23262c;
     --mute: #8a8d94;
-    position: fixed;
-    inset: 0;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center;
     display: grid;
-    grid-template-columns: clamp(220px, 21vw, 340px) minmax(0, 1fr) clamp(220px, 21vw, 340px);
+    grid-template-columns: 300px minmax(0, 1fr) 300px;
     grid-template-rows: minmax(0, 1fr) auto;
     gap: 12px;
     padding: 14px 16px 16px;
@@ -327,8 +353,8 @@
 
   /* ročni plin (razvoj) */
   .pedals {
-    position: fixed;
-    right: calc(clamp(220px, 21vw, 340px) + 32px);
+    position: absolute;
+    right: 332px;
     bottom: 110px;
     display: flex;
     gap: 10px;
@@ -347,7 +373,7 @@
 
   /* meni vira */
   .scrim {
-    position: fixed;
+    position: absolute;
     inset: 0;
     border: 0;
     border-radius: 0;
@@ -355,7 +381,7 @@
     z-index: 5;
   }
   .menu {
-    position: fixed;
+    position: absolute;
     right: 16px;
     bottom: 100px;
     z-index: 6;
@@ -399,28 +425,4 @@
     color: var(--mute);
   }
 
-  /* ozek zaslon (razvoj na telefonu): stranska panela pod merilnik */
-  @media (max-width: 900px) {
-    .app {
-      position: static;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto auto;
-      padding: 10px;
-    }
-    .center {
-      grid-column: 1 / -1;
-      grid-row: 1;
-    }
-    .side {
-      grid-row: 2;
-    }
-    .bar {
-      grid-row: 3;
-      flex-wrap: wrap;
-    }
-    .engines button {
-      min-width: 0;
-      padding: 0 12px;
-    }
-  }
 </style>

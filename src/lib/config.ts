@@ -99,3 +99,9 @@ export const GFORCE = {
   meterMaxG: 1.2, // polmer G-merilnika
   trailS: 2,
 } as const
+
+export const STAGE = {
+  // vmesnik se riše na fiksno ploščo in pomanjša na okno brskalnika (Teslin brskalnik je ožji od 900 CSS px)
+  width: 1440,
+  height: 900,
+} as const

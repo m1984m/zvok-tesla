@@ -59,7 +59,7 @@
     font-weight: 600;
   }
   .val {
-    font-size: clamp(40px, 4.4vw, 64px);
+    font-size: 60px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
