@@ -11,6 +11,11 @@ export interface SynthProfile {
   f2?: number
   reso?: number
   maxRpm?: number
+  sub?: number
+  body?: number
+  bodyHz?: number
+  shelfDb?: number
+  shelfHz?: number
   gain?: number
 }
 

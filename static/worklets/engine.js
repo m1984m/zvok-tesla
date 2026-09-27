@@ -20,11 +20,16 @@ const DEFAULT = {
   f2: 1700, // resonanca izpuha 2 (Hz)
   reso: 0.55, // delež resonanc
   crackle: 0.5, // pokanje v overrunu
+  sub: 0.35, // podton vrste valjev (polovična frekvenca vžiga)
+  body: 0.5, // nizka resonanca telesa izpuha
+  bodyHz: 100,
+  shelfDb: 6, // dvig nizkih tonov
+  shelfHz: 160,
   gain: 0.8,
   maxRpm: 8500,
 }
 
-const NUMERIC = ['pulseDecay', 'brightness', 'roughness', 'rumble', 'noise', 'scream', 'f1', 'f2', 'reso', 'crackle', 'gain', 'maxRpm']
+const NUMERIC = ['pulseDecay', 'brightness', 'roughness', 'rumble', 'noise', 'scream', 'f1', 'f2', 'reso', 'crackle', 'gain', 'maxRpm', 'sub', 'body', 'bodyHz', 'shelfDb', 'shelfHz']
 const TAU = 2 * Math.PI
 
 // RBJ pasovni filter (konstantni vrh 0 dB)
@@ -33,6 +38,23 @@ function bandpass(f, q, sr) {
   const al = Math.sin(w) / (2 * q)
   const a0 = 1 + al
   return { b0: al / a0, b2: -al / a0, a1: (-2 * Math.cos(w)) / a0, a2: (1 - al) / a0 }
+}
+
+// RBJ nizkotonski dvig (low shelf, S = 1)
+function lowshelf(f, db, sr) {
+  const A = Math.pow(10, db / 40)
+  const w = (TAU * f) / sr
+  const cs = Math.cos(w)
+  const al = (Math.sin(w) / 2) * Math.SQRT2
+  const sa = 2 * Math.sqrt(A) * al
+  const a0 = A + 1 + (A - 1) * cs + sa
+  return {
+    b0: (A * (A + 1 - (A - 1) * cs + sa)) / a0,
+    b1: (2 * A * (A - 1 - (A + 1) * cs)) / a0,
+    b2: (A * (A + 1 - (A - 1) * cs - sa)) / a0,
+    a1: (-2 * (A - 1 + (A + 1) * cs)) / a0,
+    a2: (A + 1 + (A - 1) * cs - sa) / a0,
+  }
 }
 
 class EngineProcessor extends AudioWorkletProcessor {
@@ -44,10 +66,11 @@ class EngineProcessor extends AudioWorkletProcessor {
     ]
   }
 
-  constructor() {
+  constructor(options) {
     super()
-    this.p = { ...DEFAULT }
-    this.target = { ...DEFAULT }
+    const init = { ...DEFAULT, ...(options?.processorOptions?.profile ?? {}) }
+    this.p = { ...init }
+    this.target = { ...init }
     this.phase = 0
     this.crank = 0
     this.cyl = 0
@@ -60,6 +83,9 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.pop = 0
     this.r1 = [0, 0, 0, 0] // x1 x2 y1 y2
     this.r2 = [0, 0, 0, 0]
+    this.rb = [0, 0, 0, 0]
+    this.rs = [0, 0, 0, 0]
+    this.bank = 0 // faza vrste valjev
     this.seed = 22222
     this.port.onmessage = (e) => {
       this.target = { ...DEFAULT, ...e.data }
@@ -88,6 +114,9 @@ class EngineProcessor extends AudioWorkletProcessor {
     const lpa = 1 - Math.exp((-TAU * Math.min(fc, sr * 0.45)) / sr)
     const bp1 = bandpass(p.f1 * (0.85 + 0.3 * rn), 2.5, sr)
     const bp2 = bandpass(p.f2 * (0.8 + 0.4 * rn), 3, sr)
+    const bpb = bandpass(p.bodyHz * (0.9 + 0.3 * rn), 1.4, sr)
+    const ls = lowshelf(p.shelfHz, p.shelfDb, sr)
+    const rb = this.rb, rs = this.rs
     const screamAmt = p.scream * rn * rn * (0.4 + 0.6 * load0)
     const cyl = p.cylinders
     const r1 = this.r1, r2 = this.r2
@@ -99,6 +128,7 @@ class EngineProcessor extends AudioWorkletProcessor {
       const firing = (rpm / 60) * (cyl / 2)
       this.phase += firing / sr
       this.crank = (this.crank + rpm / 120 / sr) % 1
+      this.bank = (this.bank + firing / 2 / sr) % 1
       if (this.phase >= 1) {
         this.phase -= 1
         this.cyl = (this.cyl + 1) % cyl
@@ -114,7 +144,12 @@ class EngineProcessor extends AudioWorkletProcessor {
       r1[1] = r1[0]; r1[0] = s; r1[3] = r1[2]; r1[2] = e1
       const e2 = bp2.b0 * s + bp2.b2 * r2[1] - bp2.a1 * r2[2] - bp2.a2 * r2[3]
       r2[1] = r2[0]; r2[0] = s; r2[3] = r2[2]; r2[2] = e2
-      s = s * (1 - p.reso) + (e1 * 2.2 + e2 * 1.6) * p.reso
+      const eb = bpb.b0 * s + bpb.b2 * rb[1] - bpb.a1 * rb[2] - bpb.a2 * rb[3]
+      rb[1] = rb[0]; rb[0] = s; rb[3] = rb[2]; rb[2] = eb
+      s = s * (1 - p.reso) + (e1 * 2.2 + e2 * 1.6) * p.reso + eb * 3 * p.body
+
+      // podton vrste valjev: izpuh vsake vrste pulzira s polovično frekvenco vžiga
+      s += p.sub * (Math.sin(TAU * this.bank) + 0.3 * Math.sin(2 * TAU * this.bank + 0.7)) * (0.6 + 0.4 * (1 - rn))
 
       // kričanje: harmoniki frekvence vžiga (faza vžiga je zvezna)
       const ph = TAU * x
@@ -135,7 +170,11 @@ class EngineProcessor extends AudioWorkletProcessor {
       this.dcY = y
       this.lp += lpa * (y - this.lp)
       this.lp2 += lpa * (this.lp - this.lp2)
-      out[i] = this.lp2 * p.gain
+      // nizkotonski dvig
+      const x0 = this.lp2
+      const yl = ls.b0 * x0 + ls.b1 * rs[0] + ls.b2 * rs[1] - ls.a1 * rs[2] - ls.a2 * rs[3]
+      rs[1] = rs[0]; rs[0] = x0; rs[3] = rs[2]; rs[2] = yl
+      out[i] = yl * p.gain
     }
     return true
   }

@@ -16,8 +16,13 @@
     "f2": 1450,
     "reso": 0.6,
     "crackle": 0.85,
-    "gain": 0.85,
-    "maxRpm": 8500
+    "gain": 0.78,
+    "maxRpm": 8500,
+    "sub": 0.14,
+    "body": 0.3,
+    "bodyHz": 85,
+    "shelfDb": 4.5,
+    "shelfHz": 150
   },
   "ambience": {
     "type": "none",
