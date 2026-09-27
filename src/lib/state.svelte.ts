@@ -8,12 +8,14 @@ export const car = $state({
   a: 0, // m/s²
   load: 0,
   overrun: false,
-  rpm: 780,
+  rpm: 1000,
   gear: 1,
   mode: 'auto' as GearMode,
   limiter: false,
-  source: 'replay' as SourceKind,
-  sceneId: 'stirivaljnik',
+  shift: 0, // števec menjav (UI animacija)
+  denied: 0, // števec zavrnjenih ročnih menjav
+  source: 'gps' as SourceKind,
+  sceneId: 'v12',
   volume: 0.8,
   started: false,
   paused: false,

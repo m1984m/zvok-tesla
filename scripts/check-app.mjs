@@ -23,8 +23,9 @@ const report = (name, pass, detail) => {
 await page.goto(url)
 await page.evaluate(() => localStorage.clear())
 await page.reload()
-await page.getByText('Tapni za zagon').click()
-await page.getByRole('button', { name: 'Posnetek' }).click()
+await page.locator('.start').click()
+await page.locator('.src').click()
+await page.locator('.menu button', { hasText: 'Demo vožnja' }).click()
 await page.waitForFunction(() => window.__pogon.car.v > 5, null, { timeout: 20000 })
 
 // F5: 6 s vzorčenja na vsak okvir
@@ -62,9 +63,9 @@ const f6 = await page.evaluate(async () => {
   }, 10)
   const wait = (ms) => new Promise((r) => setTimeout(r, ms))
   await wait(800)
-  const names = ['Karavanke', 'Obala', 'Inverter', 'Pohorje', 'Štirivaljnik']
+  const names = ['V8', 'V12', 'V8', 'V12', 'V8']
   for (const n of names) {
-    ;[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === n).click()
+    ;[...document.querySelectorAll('.engines button')].find((b) => b.querySelector('b').textContent.trim() === n).click()
     await wait(900)
   }
   clearInterval(iv)
@@ -85,9 +86,10 @@ await page.reload() // stran zdaj nadzira service worker
 await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
 await context.setOffline(true)
 await page.reload()
-const offlineOk = await page.getByText('Tapni za zagon').isVisible()
-await page.getByText('Tapni za zagon').click()
-await page.getByRole('button', { name: 'Posnetek' }).click()
+const offlineOk = await page.locator('.start').isVisible()
+await page.locator('.start').click()
+await page.locator('.src').click()
+await page.locator('.menu button', { hasText: 'Demo vožnja' }).click()
 const rolling = await page
   .waitForFunction(() => window.__pogon.car.v > 1 && window.__pogon.audio.running, null, { timeout: 15000 })
   .then(() => true)

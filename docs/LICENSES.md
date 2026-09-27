@@ -7,4 +7,5 @@ Vsako zvočno, slikovno ali IR sredstvo mora imeti vrstico: pot · vir · avtor 
 | `static/worklets/engine.js` | lastna koda | Matej Moharič / Claude | lastno | 2026-09-27 |
 | ambient, IR | proceduralno ustvarjeno v brskalniku | lastno | lastno | 2026-09-27 |
 | `static/replay/demo.csv` | `scripts/make-demo-drive.mjs` | lastno | lastno | 2026-09-27 |
+| pisava Barlow Condensed | npm @fontsource/barlow-condensed | Jeremy Tribby | OFL-1.1 | 2026-09-27 |
 | `static/audio/*` | (še ni zank) | | | |

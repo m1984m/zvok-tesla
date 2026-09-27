@@ -15,23 +15,33 @@ export const SMOOTHING = {
 } as const
 
 export const DRIVETRAIN = {
+  // športni avto: 7-stopenjski menjalnik z dvojno sklopko, visoki obrati
   wheelRadiusM: 0.33,
-  finalDrive: 3.7,
-  gears: [3.6, 2.2, 1.5, 1.15, 0.92, 0.75],
-  idleRpm: 780,
-  limiterRpm: 7000,
+  finalDrive: 4.0,
+  gears: [3.4, 2.4, 1.8, 1.4, 1.15, 0.95, 0.78],
+  idleRpm: 1000,
+  limiterRpm: 8500,
+  gaugeMaxRpm: 9000,
+  rpmSlewTauS: 0.12, // obrati sledijo cilju zvezno (menjava ni skok)
 } as const
 
 export const GEARBOX = {
   // PREDPOSTAVKA: pragovi za prvo verzijo, uglasitev v vozilu
-  upBaseRpm: 2500,
-  upLoadRpm: 4000,
-  downBaseRpm: 1300,
-  downLoadRpm: 1500,
-  minShiftIntervalS: 0.8,
-  shiftLoadDipS: 0.15,
+  upBaseRpm: 3200,
+  upLoadRpm: 5000, // polni plin: menjava pri 8200
+  downBaseRpm: 1500,
+  downLoadRpm: 2500,
+  brakeAccel: -1.5, // m/s², pod tem zaviranje → zgodnejša menjava dol z medplinom
+  brakeDownRpm: 2800,
+  minShiftIntervalS: 0.5,
+  overrevMarginRpm: 300, // ročna menjava dol je zavrnjena, če bi obrati presegli omejevalnik − rob
+  shiftLoadDipS: 0.15, // prestava gor: kratek odvzem plina
+  blipS: 0.18, // prestava dol: medplin
+  blipLoad: 0.7,
   limiterCutHz: 12,
-  limiterCutDropRpm: 150, // padec obratov med prekinitvijo omejevalnika
+  limiterCutDropRpm: 150,
+  shiftLightStartRpm: 5500,
+  shiftLightFullRpm: 8000,
 } as const
 
 export const MANUAL = {

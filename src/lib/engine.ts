@@ -15,6 +15,7 @@ export const gearbox = new Gearbox()
 let stopSource: (() => void) | null = null
 let raf = 0
 let lastFrame = 0
+let rpmOut: number = DRIVETRAIN.idleRpm
 const frameTimes: number[] = []
 let replaySamples: Sample[] | null = null
 
@@ -36,7 +37,10 @@ export async function setSource(kind: SourceKind, samples?: Sample[]): Promise<v
   if (samples) replaySamples = samples
   const src = await sourceFor(kind)
   stopSource = src(
-    (s) => smoother.ingest(s),
+    (s) => {
+      smoother.ingest(s)
+      car.error = ''
+    },
     (msg) => (car.error = msg),
   )
 }
@@ -44,10 +48,10 @@ export async function setSource(kind: SourceKind, samples?: Sample[]): Promise<v
 function frame(): void {
   raf = requestAnimationFrame(frame)
   const t = now()
-  const dtMs = (t - lastFrame) * 1000
-  if (dtMs < 1000 / LOOP.uiMaxFps - 2) return
+  const dt = t - lastFrame
+  if (dt * 1000 < 1000 / LOOP.uiMaxFps - 2) return
   lastFrame = t
-  frameTimes.push(dtMs)
+  frameTimes.push(dt * 1000)
   if (frameTimes.length > LOOP.slowFrameWindow) frameTimes.shift()
   if (frameTimes.length === LOOP.slowFrameWindow) {
     car.lowPower = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length > LOOP.slowFrameMs
@@ -57,12 +61,19 @@ function frame(): void {
   let load = loadFromAccel(a)
   const overrun = isOverrun(a)
   gearbox.mode = car.mode
-  gearbox.update(v, load, t)
-  if (gearbox.inShiftDip(t)) load = 0
+  if (gearbox.update(v, load, t, a)) car.shift++
+  const since = gearbox.sinceShift(t)
+  // gor: kratek odvzem plina; dol: medplin
+  if (gearbox.lastShift === 'up' && since < GEARBOX.shiftLoadDipS) load = 0
+  const blip = gearbox.lastShift === 'down' && since < GEARBOX.blipS
+  if (blip) load = Math.max(load, GEARBOX.blipLoad)
 
-  let r = limitedRpm(v, gearbox.gear)
+  const target = limitedRpm(v, gearbox.gear)
+  // obrati sledijo cilju zvezno (tudi pri menjavi); prvi okvir brez zamika
+  const k = dt > 1 ? 1 : 1 - Math.exp(-dt / DRIVETRAIN.rpmSlewTauS)
+  rpmOut += (target - rpmOut) * k
+  let r = rpmOut
   const atLimiter = rawRpm(v, gearbox.gear) >= DRIVETRAIN.limiterRpm
-  // omejevalnik: ritmična prekinitev vžiga
   if (atLimiter && Math.floor(t * GEARBOX.limiterCutHz * 2) % 2 === 1) {
     load = 0
     r -= GEARBOX.limiterCutDropRpm
@@ -71,11 +82,11 @@ function frame(): void {
   car.v = v
   car.a = a
   car.load = load
-  car.overrun = overrun
+  car.overrun = overrun && !blip
   car.rpm = r
   car.gear = gearbox.gear
   car.limiter = atLimiter
-  audio.setDrive(r, load, overrun || (atLimiter && load === 0))
+  audio.setDrive(r, load, (overrun && !blip) || (atLimiter && load === 0))
 }
 
 export function startLoop(): void {
@@ -87,7 +98,12 @@ export function stopLoop(): void {
   raf = 0
 }
 
+/** Obvolanska ročica: preklopi v ročni način in menja; zavrnjeno, če bi motor prevrtel. */
 export function shift(delta: 1 | -1): void {
-  gearbox.manual(delta, now())
+  car.mode = 'manual'
+  gearbox.mode = 'manual'
+  const t = now()
+  if (gearbox.manual(delta, t, smoother.predict(t).v)) car.shift++
+  else car.denied++
   car.gear = gearbox.gear
 }

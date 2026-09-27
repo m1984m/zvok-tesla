@@ -1,5 +1,4 @@
 export interface SynthProfile {
-  kind: 'combustion' | 'electric'
   cylinders?: number
   pulseDecay?: number
   brightness?: number
@@ -7,12 +6,18 @@ export interface SynthProfile {
   rumble?: number
   noise?: number
   crackle?: number
+  scream?: number
+  f1?: number
+  f2?: number
+  reso?: number
+  maxRpm?: number
   gain?: number
 }
 
 export interface Scene {
   id: string
   name: string
+  subtitle: string
   tier: string // vsi paketi so odklenjeni (docs/DECISIONS.md)
   engine: string // mapa zank v static/audio/<engine>/; če je ni, velja synth
   synth: SynthProfile

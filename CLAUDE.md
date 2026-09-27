@@ -101,21 +101,20 @@ Vse spodaj so PREDPOSTAVKE za prvo verzijo; uglasitev v vozilu.
 - `a` = Δv/Δt, glajenje EMA s τ = 0,3 s.
 - `load = clamp(a / 3.5, 0, 1)`; pri `a < -0,3 m/s²` stanje »brez plina« (overrun).
 
-**Obrati**
+**Obrati** (športni avto, spremenjeno 27.09.2026 po prvi vožnji)
 - `rpm = v / (2π · r) · 60 · i_prestave · i_diferenciala`
-- `r = 0,33 m`, `i_dif = 3,7`, prestave `[3.6, 2.2, 1.5, 1.15, 0.92, 0.75]`
-- Prosti tek 780 rpm; `rpm = max(prosti_tek, izračun)`; omejevalnik 7000 rpm.
-- Kontrolni izračun (mora iti v test): 100 km/h v 6. prestavi → 27,78 m/s / 2,073 m = 13,40 obr/s → 804 obr/min × 0,75 × 3,7 = **≈ 2231 rpm**.
-- Kontrola 1. prestave: 7000 rpm → ≈ 65 km/h.
+- `r = 0,33 m`, `i_dif = 4,0`, 7 prestav `[3.4, 2.4, 1.8, 1.4, 1.15, 0.95, 0.78]`
+- Prosti tek 1000 rpm; omejevalnik 8500 rpm; merilnik do 9000.
+- Obrati sledijo cilju zvezno (τ = 0,12 s), zato menjava ni skok igle.
+- Kontrola (test): 100 km/h v 7. prestavi ≈ **2508 rpm**; 1. prestava doseže omejevalnik pri ≈ 78 km/h.
 
 **Menjalnik Auto (s histerezo)**
-- Gor: `rpm > 2500 + load · 4000`
-- Dol: `rpm < 1300 + load · 1500`
-- Najmanj 0,8 s med dvema menjavama.
-- Ob menjavi: kratek padec load (~150 ms) za zvočni »klik« menjave.
+- Gor: `rpm > 3200 + load · 5000` (polni plin: 8200); med pojemanjem ne gor.
+- Dol: `rpm < 1500 + load · 2500`; pri zaviranju (a < −1,5 m/s²) že pod 2800 rpm, z medplinom (180 ms).
+- Vedno ena prestava naenkrat, nikoli čez omejevalnik; najmanj 0,5 s med menjavama.
 
 **Menjalnik Manual**
-- Gumba ± (velika, ≥ 80 px). Pri omejevalniku ritmična prekinitev (»rupteur«) ~ 12 Hz.
+- Obvolanski ročici ± levo in desno (dotik preklopi v ročni način). Menjava dol, ki bi prevrtela motor, je zavrnjena (ročica zasveti rdeče). Pri omejevalniku ritmična prekinitev ~ 12 Hz.
 
 ---
 
@@ -158,7 +157,7 @@ Scena = motor + ambient + akustika (IR) + slika + barvna tema.
 }
 ```
 
-Začetni nabor: `stirivaljnik` (brezplačna), `karavanke`, `pohorje`, `obala`, `ljubljana_lofi`, `inverter`.
+Nabor (od 27.09.2026): samo dva športna motorja, `v12` in `v8` (ravna gred). Druge scene so odstranjene na Matejevo željo.
 
 **Prepovedano:** imena ali logotipi avtomobilskih znamk in modelov v imenih, opisih ali slikah scen.
 
@@ -181,7 +180,7 @@ Začetni nabor: `stirivaljnik` (brezplačna), `karavanke`, `pohorje`, `obala`, `
 |---|---|---|
 | F0 | Vite + Svelte 5 + TS, struktura map, `config.ts`, Vitest | build ne teče na Windows brez dodatnih orodij |
 | F1 | Telemetrija: gps, replay (GPX/CSV), manual | replay posnetka ne da enake krivulje v/a pri dveh zagonih |
-| F2 | Fizika + menjalnik + testi | test 100 km/h v 6. ne da 2231 ± 5 rpm; Auto menja več kot 1× v 0,8 s |
+| F2 | Fizika + menjalnik + testi | test 100 km/h v 7. ne da 2508 ± 5 rpm; Auto menja več kot 1× v 0,5 s; pri zaviranju preskoči prestavo ali niha gor-dol |
 | F3 | Avdio z proceduralno sintezo (placeholder) | pri spremembi rpm se sliši klikanje ali stopnice |
 | F4 | `build-loops.mjs` + engineSampler z zankami | pri počasnem naraščanju rpm se sliši prehod med koraki |
 | F5 | Gauge (Canvas 2D), izbira prestave, izbira scen | igla skače v korakih GPS namesto zvezno |

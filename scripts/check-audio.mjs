@@ -16,11 +16,11 @@ const res = await page.evaluate(async () => {
     const ctx = new OfflineAudioContext(1, SR * DUR, SR)
     await ctx.audioWorklet.addModule('./worklets/engine.js')
     const n = new AudioWorkletNode(ctx, 'engine', { outputChannelCount: [1] })
-    n.port.postMessage(kind === 'electric' ? { kind } : { kind, cylinders: 8, crackle: 0 })
+    n.port.postMessage({ cylinders: kind === 'v12' ? 12 : 8, crackle: 0 })
     n.connect(ctx.destination)
     const rpm = n.parameters.get('rpm')
     const load = n.parameters.get('load')
-    const f = (t) => 800 + 6000 * Math.min(1, t / 2) // 800 → 6800 v 2 s
+    const f = (t) => 1000 + 7400 * Math.min(1, t / 2) // 1000 → 8400 v 2 s
     const lf = (t) => (Math.floor(t * 3) % 2 ? 1 : 0.2) // obremenitev skače 3× na s
     if (mode === 'click') {
       // kontrola merila: namerni skok enosmerne komponente pri 1,5 s
@@ -30,8 +30,8 @@ const res = await page.evaluate(async () => {
       c.start()
     }
     if (mode !== 'stepped') {
-      rpm.setValueAtTime(800, 0)
-      rpm.linearRampToValueAtTime(6800, 2)
+      rpm.setValueAtTime(1000, 0)
+      rpm.linearRampToValueAtTime(8400, 2)
       load.setValueAtTime(0.6, 0)
     } else {
       for (let t = 0; t < DUR; t += 1 / 30) {
@@ -63,7 +63,7 @@ const res = await page.evaluate(async () => {
     return { clicks, rms, nan }
   }
   const out = {}
-  for (const kind of ['combustion', 'electric']) {
+  for (const kind of ['v12', 'v8']) {
     out[kind] = { ramp: await render('ramp', kind), stepped: await render('stepped', kind), click: await render('click', kind) }
   }
   return out

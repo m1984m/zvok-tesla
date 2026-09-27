@@ -1,0 +1,39 @@
+{
+  "id": "v8",
+  "name": "V8",
+  "subtitle": "ravna gred · 4,5 l · 8500 rpm",
+  "tier": "free",
+  "engine": "v8",
+  "synth": {
+    "cylinders": 8,
+    "pulseDecay": 10,
+    "brightness": 0.6,
+    "roughness": 0.08,
+    "rumble": 0.08,
+    "noise": 0.3,
+    "scream": 0.75,
+    "f1": 420,
+    "f2": 1450,
+    "reso": 0.6,
+    "crackle": 0.85,
+    "gain": 0.85,
+    "maxRpm": 8500
+  },
+  "ambience": {
+    "type": "none",
+    "gain": 0,
+    "lowpassHz": 4000
+  },
+  "acoustics": {
+    "ir": "street",
+    "decayS": 0.5,
+    "wet": 0.08
+  },
+  "theme": {
+    "accent": "#ffc21a",
+    "bg": [
+      "#07080a",
+      "#141007"
+    ]
+  }
+}
