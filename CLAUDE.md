@@ -109,12 +109,11 @@ Vse spodaj so PREDPOSTAVKE za prvo verzijo; uglasitev v vozilu.
 - Obrati sledijo cilju zvezno (τ = 0,12 s), zato menjava ni skok igle.
 - Kontrola (test): 100 km/h v 7. prestavi ≈ **2508 rpm**; 1. prestava doseže omejevalnik pri ≈ 78 km/h.
 
-**Menjalnik Auto (s histerezo)**
-- Gor: `rpm > 3200 + load · 5000` (polni plin: 8200); med pojemanjem ne gor.
-- Menjalnik odloča po glajeni obremenitvi in pospešku (τ = 1 s), ne po surovem GPS.
-- Dol: pod 1500 rpm; pri izrazitem plinu (glajena obremenitev > 0,6, kickdown) pod `1500 + load · 2500`; pri zaviranju (a < −2 m/s²) pod 2400 rpm, z medplinom (180 ms).
-- Po menjavi dol 2,5 s ni menjave gor (proti nihanju).
-- Vedno ena prestava naenkrat, nikoli čez omejevalnik; najmanj 0,5 s med menjavama.
+**Menjalnik Auto (s histerezo)** (uglašen na 5 pravih vožnjah, `real-drive.test.ts`)
+- Odloča po glajenem pospešku (τ = 1 s) in obremenitvi iz njega, ne po surovem GPS.
+- Gor: `rpm > 3000 + load · 5200`; ne med pojemanjem in ne 3 s po menjavi dol.
+- Dol: zaviranje (a < −2 m/s²), ko bi nižja prestava imela < 2700 rpm (pod pragom gor → brez prekrivanja); davljenje pod 1500 rpm; kickdown pri obremenitvi > 0,6. 3 s po menjavi gor ni menjave dol (razen pod 800 rpm).
+- Ena prestava naenkrat, nikoli čez omejevalnik, najmanj 0,5 s med menjavama.
 
 **Menjalnik Manual**
 - Obvolanski ročici ± levo in desno (dotik preklopi v ročni način). Menjava dol, ki bi prevrtela motor, je zavrnjena (ročica zasveti rdeče). Pri omejevalniku ritmična prekinitev ~ 12 Hz.

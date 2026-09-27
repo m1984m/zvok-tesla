@@ -1,5 +1,6 @@
 import { DRIVETRAIN, GEARBOX } from '../config'
 import { rawRpm } from './drivetrain'
+import { loadFromAccel } from './smoothing'
 
 export type GearMode = 'auto' | 'manual'
 export type ShiftKind = 'up' | 'down' | null
@@ -18,22 +19,25 @@ export class Gearbox {
    */
   update(speedMs: number, load: number, t: number, a = 0): ShiftKind {
     if (this.mode !== 'auto' || t - this.lastShiftT < GEARBOX.minShiftIntervalS) return null
-    const r = rawRpm(speedMs, this.gear)
-    const up = GEARBOX.upBaseRpm + load * GEARBOX.upLoadRpm
-    // dol: pri zaviranju zgodaj; pri plinu (kickdown) samo nad izrazito obremenitvijo; sicer šele pri nizkih obratih
-    const down =
-      a < GEARBOX.brakeAccel
-        ? GEARBOX.brakeDownRpm
-        : load > GEARBOX.kickdownLoad
-          ? GEARBOX.downBaseRpm + load * GEARBOX.downLoadRpm
-          : GEARBOX.downBaseRpm
-    // gor ne: med pojemanjem (sicer po medplinu takoj nazaj) in kratek čas po menjavi dol (proti nihanju),
-    // razen tik pred omejevalnikom
+    const g = this.gear
+    const r = rawRpm(speedMs, g)
+    const recent = t - this.lastShiftT < GEARBOX.holdOppositeS
     const nearLimit = r > DRIVETRAIN.limiterRpm - GEARBOX.overrevMarginRpm
-    const holding = this.lastShift === 'down' && t - this.lastShiftT < GEARBOX.holdAfterDownS
-    const mayUp = nearLimit || (a >= 0 && !holding)
-    if (r > up && mayUp && this.gear < DRIVETRAIN.gears.length) return this.shift(this.gear + 1, t)
-    if (r < down && this.gear > 1 && this.fits(speedMs, this.gear - 1)) return this.shift(this.gear - 1, t)
+
+    // gor: nad pragom, ne med pojemanjem (sicer po medplinu takoj nazaj), ne kmalu po menjavi dol
+    const up = GEARBOX.upBaseRpm + load * GEARBOX.upLoadRpm
+    if (g < DRIVETRAIN.gears.length && r > up && (nearLimit || (a >= 0 && !(recent && this.lastShift === 'down'))))
+      return this.shift(g + 1, t)
+
+    if (g === 1 || !this.fits(speedMs, g - 1)) return null
+    // motor »davi«: pod skoraj prostim tekom vedno dol, sicer ne takoj po menjavi gor (šum GPS pri nizki hitrosti)
+    if (r < DRIVETRAIN.idleRpm * GEARBOX.hardLugFactor) return this.shift(g - 1, t)
+    if (recent && this.lastShift === 'up') return null
+    if (r < GEARBOX.downBaseRpm) return this.shift(g - 1, t)
+    // zaviranje: dol, ko bi imela nižja prestava manj kot brakeTargetRpm (varno pod pragom gor → brez prekrivanja)
+    if (a < GEARBOX.brakeAccel && rawRpm(speedMs, g - 1) < GEARBOX.brakeTargetRpm) return this.shift(g - 1, t)
+    // kickdown: izrazit plin
+    if (load > GEARBOX.kickdownLoad && r < GEARBOX.downBaseRpm + load * GEARBOX.downLoadRpm) return this.shift(g - 1, t)
     return null
   }
 
@@ -62,13 +66,17 @@ export class Gearbox {
   }
 }
 
-/** Počasi glajena obremenitev in pospešek za odločanje menjalnika (zvok uporablja hitrejše vrednosti). */
+/**
+ * Počasi glajen pospešek in iz njega obremenitev za odločanje menjalnika (zvok uporablja hitrejše vrednosti).
+ * Obremenitev se računa iz ŽE glajenega pospeška: če bi glajenje sledilo obremenitvi, bi odrezan negativni
+ * del šuma GPS dal navidezno obremenitev tudi pri enakomerni vožnji.
+ */
 export class ShiftInputs {
   load = 0
   a = 0
-  update(load: number, a: number, dt: number): void {
+  update(a: number, dt: number): void {
     const k = dt > 1 ? 1 : 1 - Math.exp(-dt / GEARBOX.decisionTauS)
-    this.load += (load - this.load) * k
     this.a += (a - this.a) * k
+    this.load = loadFromAccel(this.a)
   }
 }

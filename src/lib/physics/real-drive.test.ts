@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { parseCsv } from '../telemetry/replay'
 import { Smoother, loadFromAccel } from './smoothing'
@@ -6,10 +6,14 @@ import { Gearbox, ShiftInputs } from './gearbox'
 import { rawRpm } from './drivetrain'
 import { DRIVETRAIN } from '../config'
 
-// Prava vožnja 27.09.2026 (Matejev dnevnik vozila, 30 s ločljivost, brez koordinat):
-// mesto 35–80 km/h, avtocesta 114 km/h, vrh 177 km/h. Interpolirano na 1 Hz + šum GPS.
-const pts = parseCsv(readFileSync('src/lib/physics/fixtures/voznja_2026-09-27.csv', 'utf8'))
+// Prave vožnje (Matejev dnevnik vozila, 30 s ločljivost, samo čas in hitrost, brez koordinat):
+// mesto, regionalna cesta, avtocesta. Interpolirano na 1 Hz + šum GPS.
+const DIR = 'src/lib/physics/fixtures/'
+const drives = readdirSync(DIR)
+  .filter((f) => f.startsWith('voznja_'))
+  .map((f) => ({ name: f.replace('voznja_', '').replace('.csv', ''), pts: parseCsv(readFileSync(DIR + f, 'utf8')) }))
 
+let pts = drives[0].pts
 function speedAt(t: number): number {
   let i = 0
   while (i < pts.length - 2 && pts[i + 1].t < t) i++
@@ -43,12 +47,12 @@ function simulate(noiseAmp: number, seed: number) {
       next += 1
     }
     const { v, a } = sm.predict(t)
-    si.update(loadFromAccel(a), a, dt)
+    si.update(a, dt)
     const k = gb.update(v, si.load, t, si.a)
     if (k) shifts.push({ t, kind: k, gear: gb.gear })
     maxRpm = Math.max(maxRpm, rawRpm(v, gb.gear))
-    // enakomerna vožnja po avtocesti: 105–125 km/h in resnična hitrost se ne spreminja
-    if (truth > 105 / 3.6 && truth < 125 / 3.6 && Math.abs(speedAt(t + 1) - truth) < 0.05) {
+    // enakomerna vožnja po avtocesti: 100–135 km/h in resnična hitrost se ne spreminja
+    if (truth > 100 / 3.6 && truth < 135 / 3.6 && Math.abs(speedAt(t + 1) - truth) < 0.05) {
       cruiseFrames++
       if (gb.gear === 7) cruiseTop++
     }
@@ -60,22 +64,33 @@ function simulate(noiseAmp: number, seed: number) {
   return { shifts, hunts, cruiseShare: cruiseTop / Math.max(1, cruiseFrames), cruiseFrames, maxRpm }
 }
 
-describe('prava vožnja 27.09.2026 (30 min)', () => {
-  for (const [amp, seed] of [
-    [0.5, 1],
-    [1.0, 2],
-    [1.5, 3],
-  ] as const) {
-    it(`šum GPS ±${amp} m/s: avtocesta v 7., brez nihanja, brez prevrtavanja`, () => {
-      const r = simulate(amp, seed)
-      console.log(
-        `±${amp} m/s: ${r.shifts.length} menjav v 30 min, nihanj ${r.hunts}, avtocesta v 7.: ${(r.cruiseShare * 100).toFixed(1)} % ` +
-          `(${(r.cruiseFrames / 30 / 60).toFixed(1)} min), najvišji obrati ${r.maxRpm.toFixed(0)}`,
-      )
-      expect(r.cruiseFrames).toBeGreaterThan(30 * 60 * 5) // vsaj 5 min enakomerne vožnje
-      expect(r.cruiseShare).toBeGreaterThan(0.98)
-      expect(r.hunts).toBe(0)
-      expect(r.maxRpm).toBeLessThan(DRIVETRAIN.limiterRpm)
-    })
-  }
-})
+for (const d of drives) {
+  describe(`prava vožnja ${d.name}`, () => {
+    for (const [amp, seed] of [
+      [0.5, 1],
+      [1.0, 2],
+      [1.5, 3],
+    ] as const) {
+      it(`šum GPS ±${amp} m/s: brez nihanja, brez prevrtavanja, avtocesta v 7.`, () => {
+        pts = d.pts
+        const r = simulate(amp, seed)
+        const min = (pts[pts.length - 1].t / 60).toFixed(0)
+        console.log(
+          `${d.name} (${min} min) ±${amp} m/s: ${r.shifts.length} menjav, nihanj ${r.hunts}, ` +
+            `avtocesta ${(r.cruiseFrames / 30 / 60).toFixed(1)} min od tega v 7. ${(r.cruiseShare * 100).toFixed(1)} %, najvišji obrati ${r.maxRpm.toFixed(0)}`,
+        )
+        if (process.env.DBG && r.hunts) {
+          const sh = r.shifts
+          const out: string[] = []
+          for (let i = 1; i < sh.length; i++)
+            if (sh[i].kind !== sh[i - 1].kind && sh[i].t - sh[i - 1].t < 3)
+              out.push(`[${sh[i - 1].t.toFixed(1)}s ${sh[i - 1].kind}→${sh[i - 1].gear} @${(speedAt(sh[i - 1].t) * 3.6).toFixed(0)} | ${sh[i].t.toFixed(1)}s ${sh[i].kind}→${sh[i].gear} @${(speedAt(sh[i].t) * 3.6).toFixed(0)}]`)
+          console.log('NIHANJA ' + d.name + ' ' + out.join(' '))
+        }
+        expect(r.hunts).toBe(0)
+        expect(r.maxRpm).toBeLessThan(DRIVETRAIN.limiterRpm)
+        if (r.cruiseFrames > 30 * 60) expect(r.cruiseShare).toBeGreaterThan(0.98) // vsaj 1 min enakomerne vožnje
+      })
+    }
+  })
+}

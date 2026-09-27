@@ -32,17 +32,18 @@ export const DRIVETRAIN = {
 
 export const GEARBOX = {
   // PREDPOSTAVKA: pragovi za prvo verzijo, uglasitev v vozilu
-  upBaseRpm: 3200,
-  upLoadRpm: 5000, // polni plin: menjava pri 8200
+  upBaseRpm: 3000, // 6. → 7. že pri ~100 km/h
+  upLoadRpm: 5200, // polni plin: menjava pri 8200
   downBaseRpm: 1500,
   downLoadRpm: 2500,
   brakeAccel: -2.0, // m/s², pod tem zaviranje → zgodnejša menjava dol z medplinom
-  brakeDownRpm: 2400, // pod 7. prestavo pri 110 km/h (2760), da šum GPS na avtocesti ne sproži menjave
+  brakeTargetRpm: 2700, // zaviranje: dol, ko bi nižja prestava imela manj od tega (varno pod upBaseRpm → brez prekrivanja)
   minShiftIntervalS: 0.5,
   overrevMarginRpm: 300, // ročna menjava dol je zavrnjena, če bi obrati presegli omejevalnik − rob
   decisionTauS: 1.0, // menjalnik odloča po počasi glajeni obremenitvi/pospešku (šum GPS ne sproži menjave)
   kickdownLoad: 0.6, // menjava dol zaradi plina šele nad to (glajeno) obremenitvijo
-  holdAfterDownS: 2.5, // po menjavi dol ni menjave gor toliko časa (proti nihanju)
+  holdOppositeS: 3.0,
+  hardLugFactor: 0.8, // pod idleRpm × to je davljenje, ki obide zadrževanje // po menjavi toliko časa ni nasprotne menjave (razen davljenja/omejevalnika)
   shiftLoadDipS: 0.15, // prestava gor: kratek odvzem plina
   blipS: 0.18, // prestava dol: medplin
   blipLoad: 0.7,

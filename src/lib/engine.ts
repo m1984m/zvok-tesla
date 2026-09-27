@@ -71,7 +71,7 @@ function frame(): void {
   const { v, a } = smoother.predict(t)
   let load = loadFromAccel(a)
   const overrun = isOverrun(a)
-  shiftIn.update(load, a, dt)
+  shiftIn.update(a, dt)
   if (gearbox.update(v, shiftIn.load, t, shiftIn.a)) car.shift++
   const since = gearbox.sinceShift(t)
   // gor: kratek odvzem plina; dol: medplin

@@ -30,7 +30,7 @@ function drive(speedAt: (t: number) => number, dur: number, gpsNoise: number, ga
       nextGps += 1
     }
     const { v, a } = sm.predict(t)
-    si.update(loadFromAccel(a), a, dt)
+    si.update(a, dt)
     if (gb.update(v, si.load, t, si.a)) shifts++
     gears.push(gb.gear)
   }
