@@ -83,6 +83,25 @@ const res = await page.evaluate(async () => {
   }
   const out = {}
   for (const engine of ['sportni', 'v8_360']) {
+    // zrnatost: nihanje glasnosti (5-ms RMS) pri stalnih obratih, koeficient variacije
+    let flutter = 0
+    {
+      const ctx = new OfflineAudioContext(1, SR * 3, SR)
+      const n = await makeNode(ctx, engine)
+      n.parameters.get('rpm').value = 4000
+      n.parameters.get('load').value = 0.7
+      await new Promise((r) => setTimeout(r, 50))
+      const d = (await ctx.startRendering()).getChannelData(0).subarray(SR)
+      const W = SR / 200
+      const e = []
+      for (let i = 0; i + W <= d.length; i += W) {
+        let q = 0
+        for (let j = i; j < i + W; j++) q += d[j] * d[j]
+        e.push(Math.sqrt(q / W))
+      }
+      const m = e.reduce((a, b) => a + b, 0) / e.length
+      flutter = Math.sqrt(e.reduce((a, b) => a + (b - m) ** 2, 0) / e.length) / m
+    }
     const pitch = []
     for (const rpm of [3000, 6000]) {
       const ctx = new OfflineAudioContext(1, SR * 1.2, SR)
@@ -120,7 +139,7 @@ const res = await page.evaluate(async () => {
       peak = Math.max(peak, Math.abs(x))
       rms += x * x
     }
-    out[engine] = { ratio: 2 ** octaveShift(pitch[0], pitch[1]), clicks: clicks(d), peak, rms: Math.sqrt(rms / d.length), wav: Array.from(d.filter((_, i) => i % 1 === 0)) }
+    out[engine] = { flutter, ratio: 2 ** octaveShift(pitch[0], pitch[1]), clicks: clicks(d), peak, rms: Math.sqrt(rms / d.length), wav: Array.from(d.filter((_, i) => i % 1 === 0)) }
   }
   return out
 })
@@ -134,7 +153,7 @@ for (const [engine, r] of Object.entries(res)) {
   const want = EXPECT[engine]
   const pass = Math.abs(ratio - want) < 0.2 && r.clicks <= 2 && r.rms > 0.05
   ok &&= pass
-  console.log(`${engine}: višina 3000→6000 rpm ×${ratio.toFixed(2)} (pričakovano ×${want.toFixed(2)}), klikov ${r.clicks}, vrh ${r.peak.toFixed(2)}, rms ${r.rms.toFixed(3)} → ${pass ? 'OK' : 'NAPAKA'}`)
+  console.log(`${engine}: višina 3000→6000 rpm ×${ratio.toFixed(2)} (pričakovano ×${want.toFixed(2)}), klikov ${r.clicks}, zrnatost ${(r.flutter * 100).toFixed(0)} %, vrh ${r.peak.toFixed(2)}, rms ${r.rms.toFixed(3)} → ${pass ? 'OK' : 'NAPAKA'}`)
   if (outDir) {
     mkdirSync(outDir, { recursive: true })
     const d = Float32Array.from(r.wav)

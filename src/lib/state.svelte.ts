@@ -23,4 +23,5 @@ export const car = $state({
   lowPower: false,
   uiScale: 1, // pomanjšava plošče na okno
   error: '',
+  stale: false, // GPS brez signala
 })

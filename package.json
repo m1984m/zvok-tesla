@@ -16,7 +16,8 @@
     "check:perf": "node scripts/check-perf.mjs",
     "check:bass": "node scripts/check-bass.mjs",
     "check:granular": "node scripts/check-granular.mjs",
-    "engine": "python scripts/analyze-recording.py"
+    "engine": "python scripts/analyze-recording.py",
+    "check:gps-loss": "node scripts/check-gps-loss.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",

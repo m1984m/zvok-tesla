@@ -104,7 +104,7 @@
     ['manual', 'Ročni plin', 'gumba plin in zavora (razvoj)'],
   ].filter((x) => DEV || x[0] !== 'manual') as [SourceKind, string, string][]
   const sourceLabel = $derived(SOURCES.find((s) => s[0] === car.source)?.[1] ?? '')
-  const gpsState = $derived(car.source !== 'gps' ? '' : car.error ? 'err' : car.v > 0 ? 'ok' : 'wait')
+  const gpsState = $derived(car.source !== 'gps' ? '' : car.error ? 'err' : car.stale || car.v === 0 ? 'wait' : 'ok')
 </script>
 
 <div class="stage">

@@ -94,7 +94,8 @@ Vse spodaj so PREDPOSTAVKE za prvo verzijo; uglasitev v vozilu.
 
 **Hitrost**
 - `coords.speed` (m/s); če je `null`, izračun iz razdalje (Haversine) / Δt.
-- Zavrzi vzorec, če `coords.accuracy > 30 m`.
+- Zavrzi vzorec, če `coords.accuracy > 30 m` ali če skok hitrosti glede na zadnji prejeti vzorec presega 10 m/s² (razen, če se ponovi 3×).
+- Brez signala > 1,5 s: hitrost se drži, pospešek zvezno pojema proti 0, pika »GPS« postane rumena.
 - GPS predpostavljeno ~1 Hz. Med vzorci ekstrapolacija: `v_pred = v_zadnja + a · Δt`, Δt omejen na 1,5 s.
 
 **Pospešek in obremenitev**
@@ -110,7 +111,9 @@ Vse spodaj so PREDPOSTAVKE za prvo verzijo; uglasitev v vozilu.
 
 **Menjalnik Auto (s histerezo)**
 - Gor: `rpm > 3200 + load · 5000` (polni plin: 8200); med pojemanjem ne gor.
-- Dol: `rpm < 1500 + load · 2500`; pri zaviranju (a < −1,5 m/s²) že pod 2800 rpm, z medplinom (180 ms).
+- Menjalnik odloča po glajeni obremenitvi in pospešku (τ = 1 s), ne po surovem GPS.
+- Dol: pod 1500 rpm; pri izrazitem plinu (glajena obremenitev > 0,6, kickdown) pod `1500 + load · 2500`; pri zaviranju (a < −2 m/s²) pod 2400 rpm, z medplinom (180 ms).
+- Po menjavi dol 2,5 s ni menjave gor (proti nihanju).
 - Vedno ena prestava naenkrat, nikoli čez omejevalnik; najmanj 0,5 s med menjavama.
 
 **Menjalnik Manual**

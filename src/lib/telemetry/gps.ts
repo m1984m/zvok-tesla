@@ -25,14 +25,17 @@ export const gpsSource: Source = (emit, onError) => {
       if (prev) {
         const d = haversineM(prev.coords.latitude, prev.coords.longitude, p.coords.latitude, p.coords.longitude)
         const dt = (p.timestamp - prev.timestamp) / 1000
-        if (v == null && dt > 0) v = d / dt
+        if (v == null && dt > 0 && dt <= GPS.fallbackMaxGapS) v = d / dt
         if ((heading == null || Number.isNaN(heading)) && d > 3)
           heading = bearingDeg(prev.coords.latitude, prev.coords.longitude, p.coords.latitude, p.coords.longitude)
       }
       prev = p
       if (v != null && Number.isFinite(v)) emit({ t: now(), v, heading })
     },
-    (e) => onError?.(e.message || 'GPS ni dosegljiv.'),
+    // TIMEOUT (3) je samo začasno brez signala: to pokaže pika, ne sporočilo o napaki
+    (e) => {
+      if (e.code !== e.TIMEOUT) onError?.(e.code === e.PERMISSION_DENIED ? 'Dostop do lokacije ni dovoljen.' : 'GPS ni dosegljiv.')
+    },
     { enableHighAccuracy: true, maximumAge: 0, timeout: GPS.timeoutMs },
   )
   return () => navigator.geolocation.clearWatch(id)

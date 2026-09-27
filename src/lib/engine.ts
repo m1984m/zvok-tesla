@@ -2,7 +2,7 @@ import { DRIVETRAIN, GEARBOX, GFORCE, LOOP } from './config'
 import { car, type SourceKind } from './state.svelte'
 import { Smoother, isOverrun, loadFromAccel } from './physics/smoothing'
 import { LateralEstimator } from './physics/lateral'
-import { Gearbox } from './physics/gearbox'
+import { Gearbox, ShiftInputs } from './physics/gearbox'
 import { rawRpm, rpm as limitedRpm } from './physics/drivetrain'
 import { audio } from './audio/context'
 import { gpsSource } from './telemetry/gps'
@@ -14,6 +14,7 @@ import { now, type Sample, type Source } from './telemetry/types'
 const smoother = new Smoother()
 const lateral = new LateralEstimator()
 export const gearbox = new Gearbox()
+const shiftIn = new ShiftInputs()
 let stopSource: (() => void) | null = null
 let raf = 0
 let lastFrame = 0
@@ -70,7 +71,8 @@ function frame(): void {
   const { v, a } = smoother.predict(t)
   let load = loadFromAccel(a)
   const overrun = isOverrun(a)
-  if (gearbox.update(v, load, t, a)) car.shift++
+  shiftIn.update(load, a, dt)
+  if (gearbox.update(v, shiftIn.load, t, shiftIn.a)) car.shift++
   const since = gearbox.sinceShift(t)
   // gor: kratek odvzem plina; dol: medplin
   if (gearbox.lastShift === 'up' && since < GEARBOX.shiftLoadDipS) load = 0
@@ -97,6 +99,7 @@ function frame(): void {
   if (-car.gLong > car.peakBrake) car.peakBrake = -car.gLong
   if (Math.abs(car.gLat) > car.peakLat) car.peakLat = Math.abs(car.gLat)
 
+  car.stale = car.source === 'gps' && smoother.isStale(t)
   car.v = v
   car.a = a
   car.load = load

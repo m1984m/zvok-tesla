@@ -5,6 +5,11 @@ export const GPS = {
   maxAccuracyM: 30,
   maxExtrapolationS: 1.5,
   timeoutMs: 10000,
+  staleS: 1.5, // brez vzorca dlje od tega → »ni signala«: hitrost se drži, pospešek pojema proti 0
+  staleAccelTauS: 0.5,
+  maxPlausibleAccel: 10, // m/s² (~1 g); večji skok hitrosti med vzorcema je napaka GPS
+  maxRejectsInRow: 3, // po toliko zavrnitvah zaporedoma sprejmemo novo raven (pravi skok)
+  fallbackMaxGapS: 3, // hitrost iz razdalje samo, če je prejšnja točka mlajša od tega
 } as const
 
 export const SMOOTHING = {
@@ -31,10 +36,13 @@ export const GEARBOX = {
   upLoadRpm: 5000, // polni plin: menjava pri 8200
   downBaseRpm: 1500,
   downLoadRpm: 2500,
-  brakeAccel: -1.5, // m/s², pod tem zaviranje → zgodnejša menjava dol z medplinom
-  brakeDownRpm: 2800,
+  brakeAccel: -2.0, // m/s², pod tem zaviranje → zgodnejša menjava dol z medplinom
+  brakeDownRpm: 2400, // pod 7. prestavo pri 110 km/h (2760), da šum GPS na avtocesti ne sproži menjave
   minShiftIntervalS: 0.5,
   overrevMarginRpm: 300, // ročna menjava dol je zavrnjena, če bi obrati presegli omejevalnik − rob
+  decisionTauS: 1.0, // menjalnik odloča po počasi glajeni obremenitvi/pospešku (šum GPS ne sproži menjave)
+  kickdownLoad: 0.6, // menjava dol zaradi plina šele nad to (glajeno) obremenitvijo
+  holdAfterDownS: 2.5, // po menjavi dol ni menjave gor toliko časa (proti nihanju)
   shiftLoadDipS: 0.15, // prestava gor: kratek odvzem plina
   blipS: 0.18, // prestava dol: medplin
   blipLoad: 0.7,
