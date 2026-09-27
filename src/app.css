@@ -1,0 +1,4 @@
+:root { color-scheme: light dark; --bg: #f4f4f2; --fg: #111; font-family: system-ui, sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0d0d0f; --fg: #eee; } }
+body { margin: 0; background: var(--bg); color: var(--fg); }
+main { padding: 16px; }
