@@ -11,7 +11,52 @@
   const SWEEP = Math.PI * 1.5
   const ang = (r: number) => A0 + (Math.min(r, MAX) / MAX) * SWEEP
 
-  // Riše ob vsaki spremembi rpm (glavna zanka ga osveži ≤ 30× na s, zvezno iz ekstrapolacije).
+  // Statični sloj (lok, rdeče polje, številke) se nariše enkrat na velikost/barvo; na šibkem MCU
+  // (Intel Atom) vsak okvir samo prekopira sliko in nariše igro, aktivni lok in besedilo.
+  let bg: HTMLCanvasElement | null = null
+  let bgKey = ''
+  let fg = '#f2f2f2'
+
+  function staticLayer(s: number, dpr: number): HTMLCanvasElement {
+    const key = `${s}|${dpr}|${fg}`
+    if (bg && key === bgKey) return bg
+    bg = document.createElement('canvas')
+    bg.width = bg.height = s * dpr
+    const c = bg.getContext('2d')!
+    c.scale(dpr, dpr)
+    const cx = s / 2
+    const R = s * 0.44
+    c.lineWidth = s * 0.03
+    c.strokeStyle = 'rgba(128,128,128,0.35)'
+    c.beginPath()
+    c.arc(cx, cx, R, A0, A0 + SWEEP)
+    c.stroke()
+    c.strokeStyle = '#e03030'
+    c.beginPath()
+    c.arc(cx, cx, R, ang(DRIVETRAIN.limiterRpm - 500), A0 + SWEEP)
+    c.stroke()
+    c.fillStyle = fg
+    c.font = `600 ${s * 0.055}px system-ui, sans-serif`
+    c.textAlign = 'center'
+    c.textBaseline = 'middle'
+    for (let k = 0; k <= MAX / 1000; k++) {
+      const a = ang(k * 1000)
+      c.fillText(String(k), cx + Math.cos(a) * R * 0.8, cx + Math.sin(a) * R * 0.8)
+    }
+    bgKey = key
+    return bg
+  }
+
+  // barva besedila se prebere samo ob spremembi velikosti ali teme, ne vsak okvir
+  $effect(() => {
+    void size
+    const mq = matchMedia('(prefers-color-scheme: dark)')
+    const read = () => (fg = getComputedStyle(canvas).color)
+    read()
+    mq.addEventListener('change', read)
+    return () => mq.removeEventListener('change', read)
+  })
+
   $effect(() => {
     const rpm = car.rpm
     const gear = car.gear
@@ -19,60 +64,42 @@
     const kmh = Math.round(car.v * 3.6)
     const c = canvas?.getContext('2d')
     if (!c) return
-    const dpr = window.devicePixelRatio || 1
-    const s = Math.max(1, size)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const s = Math.max(1, Math.round(size))
     if (canvas.width !== s * dpr) {
       canvas.width = s * dpr
       canvas.height = s * dpr
     }
+    c.setTransform(1, 0, 0, 1, 0, 0)
+    c.clearRect(0, 0, canvas.width, canvas.height)
+    c.drawImage(staticLayer(s, dpr), 0, 0)
     c.setTransform(dpr, 0, 0, dpr, 0, 0)
-    c.clearRect(0, 0, s, s)
     const cx = s / 2
-    const cy = s / 2
     const R = s * 0.44
-    const fg = getComputedStyle(canvas).color
 
-    // lok in rdeče polje
     c.lineWidth = s * 0.03
-    c.strokeStyle = 'rgba(128,128,128,0.35)'
-    c.beginPath()
-    c.arc(cx, cy, R, A0, A0 + SWEEP)
-    c.stroke()
-    c.strokeStyle = '#e03030'
-    c.beginPath()
-    c.arc(cx, cy, R, ang(DRIVETRAIN.limiterRpm - 500), A0 + SWEEP)
-    c.stroke()
-    // aktivni lok
     c.strokeStyle = accent
     c.beginPath()
-    c.arc(cx, cy, R, A0, ang(rpm))
+    c.arc(cx, cx, R, A0, ang(rpm))
     c.stroke()
 
-    // oznake
-    c.fillStyle = fg
-    c.font = `600 ${s * 0.055}px system-ui, sans-serif`
-    c.textAlign = 'center'
-    c.textBaseline = 'middle'
-    for (let k = 0; k <= MAX / 1000; k++) {
-      const a = ang(k * 1000)
-      c.fillText(String(k), cx + Math.cos(a) * R * 0.8, cy + Math.sin(a) * R * 0.8)
-    }
-
-    // igla
     const a = ang(rpm)
     c.strokeStyle = limiter ? '#e03030' : fg
     c.lineWidth = s * 0.012
     c.lineCap = 'round'
     c.beginPath()
-    c.moveTo(cx, cy)
-    c.lineTo(cx + Math.cos(a) * R * 0.92, cy + Math.sin(a) * R * 0.92)
+    c.moveTo(cx, cx)
+    c.lineTo(cx + Math.cos(a) * R * 0.92, cx + Math.sin(a) * R * 0.92)
     c.stroke()
+    c.lineCap = 'butt'
 
-    // prestava in hitrost
+    c.fillStyle = fg
+    c.textAlign = 'center'
+    c.textBaseline = 'middle'
     c.font = `700 ${s * 0.2}px system-ui, sans-serif`
-    c.fillText(String(gear), cx, cy + s * 0.2)
+    c.fillText(String(gear), cx, cx + s * 0.2)
     c.font = `500 ${s * 0.07}px system-ui, sans-serif`
-    c.fillText(`${kmh} km/h`, cx, cy + s * 0.36)
+    c.fillText(`${kmh} km/h`, cx, cx + s * 0.36)
   })
 </script>
 

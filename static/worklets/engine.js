@@ -62,6 +62,10 @@ class EngineProcessor extends AudioWorkletProcessor {
     const p = this.p
     const sr = sampleRate
     const rpmA = params.rpm, loadA = params.load, ovA = params.overrun
+    // koeficient filtra enkrat na blok (128 vzorcev ≈ 2,7 ms); parametri so že glajeni → brez stopnic.
+    // Prihranek pri Math.exp na vzorec je pomemben na Intel Atom (MCU2).
+    const fc = 300 + p.brightness * 2500 + loadA[0] * 2500 + rpmA[0] * 0.4
+    const a = 1 - Math.exp((-2 * Math.PI * Math.min(fc, sr * 0.45)) / sr)
     for (let i = 0; i < out.length; i++) {
       const rpm = rpmA.length > 1 ? rpmA[i] : rpmA[0]
       const load = loadA.length > 1 ? loadA[i] : loadA[0]
@@ -97,13 +101,10 @@ class EngineProcessor extends AudioWorkletProcessor {
           this.pop *= 0.992
         }
       }
-      // DC blokada
+      // DC blokada, nato dvopolni nizkoprepustni filter (odpira se z obremenitvijo in obrati)
       const y = s - this.dcX + 0.995 * this.dcY
       this.dcX = s
       this.dcY = y
-      // dvopolni nizkoprepustni filter, odpira se z obremenitvijo in obrati
-      const fc = 300 + p.brightness * 2500 + load * 2500 + rpm * 0.4
-      const a = 1 - Math.exp((-2 * Math.PI * Math.min(fc, sr * 0.45)) / sr)
       this.lp += a * (y - this.lp)
       this.lp2 += a * (this.lp - this.lp2)
       out[i] = this.lp2 * p.gain

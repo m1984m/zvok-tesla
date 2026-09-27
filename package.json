@@ -12,7 +12,8 @@
     "check:audio": "node scripts/check-audio.mjs",
     "check:app": "node scripts/check-app.mjs",
     "loops": "node scripts/build-loops.mjs",
-    "demo": "node scripts/make-demo-drive.mjs"
+    "demo": "node scripts/make-demo-drive.mjs",
+    "check:perf": "node scripts/check-perf.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
