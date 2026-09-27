@@ -29,12 +29,21 @@ export class AudioEngine {
 
   /** Kliči samo iz dotika uporabnika (odklep AudioContext). */
   async start(): Promise<void> {
+    // iOS: zvočna seja »predvajanje« → zvok se sliši tudi, ko je telefon na tihem (Safari 16.4+)
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+    if (session) session.type = 'playback'
     if (this.ctx) {
       await this.ctx.resume()
       return
     }
     this.ctx = new AudioContext({ latencyHint: 'interactive' })
     const ctx = this.ctx
+    // iOS: odklep mora biti SINHRONO v dotiku (pred prvim await): resume + kratek tih zvok
+    void ctx.resume()
+    const unlock = ctx.createBufferSource()
+    unlock.buffer = ctx.createBuffer(1, 1, ctx.sampleRate)
+    unlock.connect(ctx.destination)
+    unlock.start()
     await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}worklets/engine.js`)
     await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}worklets/granular.js`)
     this.synth = new AudioWorkletNode(ctx, 'engine', { numberOfOutputs: 1, outputChannelCount: [1] })

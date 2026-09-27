@@ -21,7 +21,7 @@ export class GranularEngine {
     node.connect(this.output)
   }
 
-  /** Naloži static/audio/<engine>/clip.opus + map.json; null, če motor nima posnetka. */
+  /** Naloži static/audio/<engine>/clip.opus (Safari: rezerva clip.mp3) + map.json; null, če motor nima posnetka. */
   static async load(ctx: BaseAudioContext, engine: string, base = import.meta.env.BASE_URL): Promise<GranularEngine | null> {
     const dir = `${base}audio/${engine}/`
     let map: EngineMap
@@ -30,7 +30,9 @@ export class GranularEngine {
       const r = await fetch(dir + 'map.json')
       if (!r.ok) return null
       map = await r.json()
-      const buf = await ctx.decodeAudioData(await (await fetch(dir + 'clip.opus')).arrayBuffer())
+      const decode = async (f: string) => ctx.decodeAudioData(await (await fetch(dir + f)).arrayBuffer())
+      // Safari ne dekodira vedno Ogg Opus → MP3
+      const buf = await decode('clip.opus').catch(() => decode('clip.mp3'))
       pcm = buf.getChannelData(0).slice()
     } catch {
       return null

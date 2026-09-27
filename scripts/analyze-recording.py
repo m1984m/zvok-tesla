@@ -5,7 +5,7 @@ Uporaba:  python scripts/analyze-recording.py scripts/engines/<motor>.json [pot_
 Iz opisa (JSON) vzame izvorni posnetek, v navedenih odsekih sledi izbranemu harmoniku
 (začetna frekvenca je podana ročno s spektrograma), frekvenco pretvori v obrate s kalibracijo
 (hz → rpm) in zapiše:
-  static/audio/<motor>/clip.opus   mono 48 kHz, obrezan posnetek
+  static/audio/<motor>/clip.opus   mono 48 kHz, obrezan posnetek (+ clip.mp3 za Safari)
   static/audio/<motor>/map.json    za vsako plast (on/off/idle) pari čas ↔ obrati + ovojnica RMS
 Izjema od pravila »skripte v Node«: analiza potrebuje FFT; numpy/scipy sta nameščena (docs/DECISIONS.md).
 """
@@ -109,6 +109,11 @@ def main() -> None:
     subprocess.run(
         ['ffmpeg', '-y', '-v', 'error', '-ss', str(c0), '-to', str(c1), '-i', src, '-ac', '1', '-ar', str(SR),
          '-c:a', 'libopus', '-b:a', '112k', str(out / 'clip.opus')],
+        check=True,
+    )
+    subprocess.run(  # Safari ne dekodira vedno Ogg Opus
+        ['ffmpeg', '-y', '-v', 'error', '-ss', str(c0), '-to', str(c1), '-i', src, '-ac', '1', '-ar', str(SR),
+         '-c:a', 'libmp3lame', '-b:a', '128k', str(out / 'clip.mp3')],
         check=True,
     )
     m = {
