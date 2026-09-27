@@ -81,8 +81,33 @@ const res = await page.evaluate(async () => {
     }
     return c
   }
+  // frekvenca vžiga v posnetku za prikazane obrate (samo V12: razteg + 10 rpm/Hz iz kalibracije 68 Hz = 680 rpm)
+  const LINE = { v12: (d) => (680 + ((d - 1000) * 2420) / 4500) / 10 }
+  // najmočnejša frekvenca v ±10 % okoli f
+  function peakNear(d, f) {
+    const N = 32768
+    const x = d.subarray(d.length - N)
+    let best = 0
+    let bf = 0
+    for (let g = f * 0.9; g <= f * 1.1; g += 0.25) {
+      let re = 0
+      let im = 0
+      const w = (2 * Math.PI * g) / SR
+      for (let i = 0; i < N; i += 2) {
+        const h = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N)
+        re += x[i] * h * Math.cos(w * i)
+        im += x[i] * h * Math.sin(w * i)
+      }
+      if (re * re + im * im > best) {
+        best = re * re + im * im
+        bf = g
+      }
+    }
+    return { want: f, got: bf }
+  }
+  const PAIRS = { sportni: [3000, 6000], v8_360: [3000, 6000], v12: [4000, 5400] }
   const out = {}
-  for (const engine of ['sportni', 'v8_360']) {
+  for (const engine of ['sportni', 'v8_360', 'v12']) {
     // zrnatost: nihanje glasnosti (5-ms RMS) pri stalnih obratih, koeficient variacije
     let flutter = 0
     {
@@ -103,13 +128,16 @@ const res = await page.evaluate(async () => {
       flutter = Math.sqrt(e.reduce((a, b) => a + (b - m) ** 2, 0) / e.length) / m
     }
     const pitch = []
-    for (const rpm of [3000, 6000]) {
+    const lines = []
+    for (const rpm of PAIRS[engine]) {
       const ctx = new OfflineAudioContext(1, SR * 1.2, SR)
       const n = await makeNode(ctx, engine)
       n.parameters.get('rpm').value = rpm
       n.parameters.get('load').value = 1
       await new Promise((r) => setTimeout(r, 50)) // sporočilo s posnetkom prispe pred izrisom
-      pitch.push(logSpec((await ctx.startRendering()).getChannelData(0)))
+      const d = (await ctx.startRendering()).getChannelData(0)
+      pitch.push(logSpec(d))
+      if (LINE[engine]) lines.push(peakNear(d, LINE[engine](rpm)))
     }
     // demo: 2 s prosti tek, pospeševanje 1.–3. prestava, odvzem plina
     const DUR = 14
@@ -139,21 +167,28 @@ const res = await page.evaluate(async () => {
       peak = Math.max(peak, Math.abs(x))
       rms += x * x
     }
-    out[engine] = { flutter, ratio: 2 ** octaveShift(pitch[0], pitch[1]), clicks: clicks(d), peak, rms: Math.sqrt(rms / d.length), wav: Array.from(d.filter((_, i) => i % 1 === 0)) }
+    out[engine] = { lines, flutter, ratio: 2 ** octaveShift(pitch[0], pitch[1]), clicks: clicks(d), peak, rms: Math.sqrt(rms / d.length), wav: Array.from(d.filter((_, i) => i % 1 === 0)) }
   }
   return out
 })
 
 // pričakovano razmerje višine: športni sledi obratom 1 : 1; V8 ima razteg (1000–2200 posnetka → 1000–5000 prikaza),
 // zato 3000 → 1600 in 6000 → 2200 · 6000/5000 (hitrost nad vrhom posnetka)
-const EXPECT = { sportni: 2, v8_360: (2200 * (6000 / 4875)) / 1600 }
+// V12: razteg 680–3100 posnetka → 1000–5500 prikaza; primerjava 4000/5400 (obe v 2./3. prestavi posnetka,
+// sicer zrna iz 1. prestave pri polnem plinu spremenijo barvo in merilo spektra to zamenja za višino)
+const lin = (d) => 680 + ((d - 1000) * 2420) / 4500
+const EXPECT = { sportni: 2, v8_360: (2200 * (6000 / 4875)) / 1600, v12: lin(5400) / lin(4000) }
 let ok = true
 for (const [engine, r] of Object.entries(res)) {
   const ratio = r.ratio
   const want = EXPECT[engine]
-  const pass = Math.abs(ratio - want) < 0.2 && r.clicks <= 2 && r.rms > 0.05
+  // V12: preverjanje po harmoniku (spekter je zasenčen s šumom dirkališča)
+  const lineOk = r.lines.length ? r.lines.every((l) => Math.abs(l.got / l.want - 1) < 0.04) : true
+  const pitchOk = r.lines.length ? lineOk : Math.abs(ratio - want) < 0.2
+  const pass = pitchOk && r.clicks <= 2 && r.rms > 0.05
+  if (r.lines.length) console.log(`  ${engine} harmonik: ` + r.lines.map((l) => `pričakovano ${l.want.toFixed(0)} Hz → ${l.got.toFixed(0)} Hz`).join(', '))
   ok &&= pass
-  console.log(`${engine}: višina 3000→6000 rpm ×${ratio.toFixed(2)} (pričakovano ×${want.toFixed(2)}), klikov ${r.clicks}, zrnatost ${(r.flutter * 100).toFixed(0)} %, vrh ${r.peak.toFixed(2)}, rms ${r.rms.toFixed(3)} → ${pass ? 'OK' : 'NAPAKA'}`)
+  console.log(`${engine}: višina ×${ratio.toFixed(2)} (pričakovano ×${want.toFixed(2)}), klikov ${r.clicks}, zrnatost ${(r.flutter * 100).toFixed(0)} %, vrh ${r.peak.toFixed(2)}, rms ${r.rms.toFixed(3)} → ${pass ? 'OK' : 'NAPAKA'}`)
   if (outDir) {
     mkdirSync(outDir, { recursive: true })
     const d = Float32Array.from(r.wav)

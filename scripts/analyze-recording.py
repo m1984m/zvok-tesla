@@ -87,11 +87,16 @@ def main() -> None:
     plots = []
     for name, segs in spec['layers'].items():
         ts, rs = [], []
-        for s0, s1, f0 in segs:
+        for seg in segs:
+            # [od, do, začetna Hz] ali [od, do, začetna Hz, faktor]: faktor preračuna sledeni harmonik
+            # v isti red kot kalibracija (npr. 2 za polovično frekvenco vžiga)
+            s0, s1, f0 = seg[:3]
+            mult = seg[3] if len(seg) > 3 else 1
             t, f = track(x, s0 - c0, s1 - c0, f0, spec.get('search', SEARCH))
+            f = f * mult
             ts.append(t)
             rs.append(to_rpm(f))
-            plots.append((t + c0, f))
+            plots.append((t + c0, f / mult))
         t = np.concatenate(ts)
         r = np.concatenate(rs)
         layers[name] = {'t': np.round(t, 3).tolist(), 'rpm': np.round(r, 1).tolist()}

@@ -1,0 +1,48 @@
+{
+  "url": "https://freesound.org/people/tall.alex/sounds/73748/",
+  "title": "aston pull away.wav",
+  "author": "tall.alex",
+  "license": "CC BY 3.0",
+  "id": "v12",
+  "source": "raw/v12_db9_73748.mp3",
+  "trim": [
+    12.8,
+    31.0
+  ],
+  "calib": {
+    "hz": 68,
+    "rpm": 680
+  },
+  "layers": {
+    "on": [
+      [
+        19.0,
+        21.3,
+        85,
+        1.5
+      ],
+      [
+        22.45,
+        25.3,
+        215
+      ],
+      [
+        25.9,
+        30.7,
+        222
+      ]
+    ]
+  },
+  "idle": [
+    0.4,
+    5.0
+  ],
+  "idleRpm": 1000,
+  "plotMaxHz": 700,
+  "stretch": [
+    680,
+    3100,
+    1000,
+    5500
+  ]
+}

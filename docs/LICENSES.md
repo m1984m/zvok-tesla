@@ -9,4 +9,5 @@ Vsako zvočno, slikovno ali IR sredstvo mora imeti vrstico: pot · vir · avtor 
 | `static/replay/demo.csv` | `scripts/make-demo-drive.mjs` | lastno | lastno | 2026-09-27 |
 | pisava Barlow Condensed | npm @fontsource/barlow-condensed | Jeremy Tribby | OFL-1.1 | 2026-09-27 |
 | `static/audio/sportni/clip.opus` | [Freesound 457560](https://freesound.org/people/florianreichelt/sounds/457560/) »Acceleration of a Sports Car Engine like Ferrari or Lamborghini or Porsche« | florianreichelt | CC0 1.0 | 2026-09-27 |
+| `static/audio/v12/clip.*` | [Freesound 73748](https://freesound.org/people/tall.alex/sounds/73748/) »aston pull away.wav« (Aston Martin DB9, V12) | tall.alex | CC BY 3.0 — avtor naveden na gumbu motorja | 2026-09-27 |
 | `static/audio/v8_360/clip.opus` | [Freesound 241083](https://freesound.org/people/PritzProductions/sounds/241083/) »Ferrari 360 Spider - engine sound« | PritzProductions | CC0 1.0 | 2026-09-27 |

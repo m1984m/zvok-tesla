@@ -300,13 +300,14 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    min-width: 170px;
+    min-width: 130px;
   }
   .engines b {
     font-size: 30px;
     line-height: 1;
   }
   .engines small {
+    white-space: nowrap;
     font-size: 15px;
     letter-spacing: 0.02em;
   }

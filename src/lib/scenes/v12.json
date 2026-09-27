@@ -1,8 +1,8 @@
 {
-  "id": "sportni",
-  "name": "Športni",
-  "subtitle": "skozi prestave",
-  "engine": "sportni",
+  "id": "v12",
+  "name": "V12",
+  "subtitle": "tall.alex · CC BY",
+  "engine": "v12",
   "tier": "free",
   "ambience": {
     "type": "none",
@@ -35,10 +35,10 @@
     "shelfHz": 150
   },
   "theme": {
-    "accent": "#ff2a1a",
+    "accent": "#3aa0ff",
     "bg": [
       "#07080a",
-      "#15090a"
+      "#070d15"
     ]
   }
 }
