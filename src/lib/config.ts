@@ -63,3 +63,19 @@ export const AUDIO = {
   samplerMinRpm: 1000,
   samplerMaxRpm: 7000,
 } as const
+
+export const SAMPLER = {
+  onFloor: 0.35, // delež »on« zanke pri load 0 brez overruna
+  loopLengthS: 3, // build-loops: dolžina zanke
+  loopCrossfadeS: 0.5, // build-loops: preliv šiva
+  loudnessLufs: -18,
+} as const
+
+export const SCENE_AUDIO = {
+  noiseBufferS: 6,
+  irPreDelayS: 0.02,
+  seaLfoHz: 0.09,
+  seaLfoDepth: 0.6,
+  cityHumHz: 50,
+  cityHumGain: 0.08,
+} as const
