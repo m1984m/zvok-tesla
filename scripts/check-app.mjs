@@ -49,7 +49,8 @@ for (let i = 1; i < f5.length; i++) {
   if (d > 1e-6) changes++
 }
 // zanka teče pri ≤ 30 fps, GPS pri 1 Hz → zvezno pomeni ≫ 6 sprememb v 6 s
-report('F5 igla zvezna', changes > 60 && maxJump < 0.5, `${changes} sprememb v 6 s, največji skok ${maxJump.toFixed(3)} m/s`)
+// vožnja »Avtocesta« pospešuje 3 m/s² → koraki GPS do 3 m/s; zvezno = okvir < 1/4 koraka
+report('F5 igla zvezna', changes > 60 && maxJump < 0.75, `${changes} sprememb v 6 s, največji skok ${maxJump.toFixed(3)} m/s`)
 
 // F6: merjenje RMS izhoda vsakih 10 ms med preklopi scen
 const f6 = await page.evaluate(async () => {
