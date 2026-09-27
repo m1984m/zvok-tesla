@@ -4,6 +4,7 @@ import { chromium } from 'playwright'
 import { preview } from 'vite'
 
 const RATE = Number(process.argv[2] ?? 6)
+const HIDE = process.argv[3] // neobvezno: CSS izbirnik, ki ga skrijemo (iskanje porabnika)
 const server = await preview({ preview: { port: 4182, strictPort: true } })
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] })
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, colorScheme: 'dark' })
@@ -13,6 +14,7 @@ await page.locator('.src').click()
 await page.locator('.menu button', { hasText: 'Demo vožnja' }).click()
 await page.getByRole('button', { name: /V8/ }).click()
 await page.waitForFunction(() => window.__pogon.car.v > 5, null, { timeout: 20000 })
+if (HIDE) await page.addStyleTag({ content: `${HIDE}{display:none!important}` })
 const cdp = await page.context().newCDPSession(page)
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: RATE })
 await cdp.send('Performance.enable')

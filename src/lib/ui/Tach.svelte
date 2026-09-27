@@ -83,7 +83,6 @@
   $effect(() => {
     const rpm = car.rpm
     const gear = car.gear
-    const mode = car.mode
     const limiter = car.limiter
     const kmh = Math.round(car.v * 3.6)
     const c = canvas?.getContext('2d')
@@ -143,9 +142,6 @@
     c.fillStyle = '#f4f4f5'
     c.font = `700 ${s * 0.25}px ${FONT}`
     c.fillText(String(gear), cx, cx + R * 0.42)
-    c.fillStyle = mode === 'manual' ? accent : '#8a8d94'
-    c.font = `600 ${s * 0.045}px ${FONT}`
-    c.fillText(mode === 'manual' ? 'M' : 'A', cx + R * 0.3, cx + R * 0.3)
     c.fillStyle = '#e8e8ea'
     c.font = `600 ${s * 0.085}px ${FONT}`
     c.fillText(String(kmh), cx, cx + R * 0.74)

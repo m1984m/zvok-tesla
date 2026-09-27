@@ -1,4 +1,5 @@
 import { GPS } from '../config'
+import { bearingDeg } from '../physics/lateral'
 import { now, type Source } from './types'
 
 const EARTH_R = 6371000
@@ -20,12 +21,16 @@ export const gpsSource: Source = (emit, onError) => {
     (p) => {
       if (p.coords.accuracy > GPS.maxAccuracyM) return
       let v = p.coords.speed
-      if (v == null && prev) {
+      let heading = p.coords.heading
+      if (prev) {
+        const d = haversineM(prev.coords.latitude, prev.coords.longitude, p.coords.latitude, p.coords.longitude)
         const dt = (p.timestamp - prev.timestamp) / 1000
-        if (dt > 0) v = haversineM(prev.coords.latitude, prev.coords.longitude, p.coords.latitude, p.coords.longitude) / dt
+        if (v == null && dt > 0) v = d / dt
+        if ((heading == null || Number.isNaN(heading)) && d > 3)
+          heading = bearingDeg(prev.coords.latitude, prev.coords.longitude, p.coords.latitude, p.coords.longitude)
       }
       prev = p
-      if (v != null && Number.isFinite(v)) emit({ t: now(), v })
+      if (v != null && Number.isFinite(v)) emit({ t: now(), v, heading })
     },
     (e) => onError?.(e.message || 'GPS ni dosegljiv.'),
     { enableHighAccuracy: true, maximumAge: 0, timeout: GPS.timeoutMs },

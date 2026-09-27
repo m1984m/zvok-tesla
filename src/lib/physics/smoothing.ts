@@ -3,6 +3,7 @@ import { GPS, SMOOTHING } from '../config'
 export interface Sample {
   t: number // s
   v: number // m/s
+  heading?: number | null // smer vožnje v stopinjah (0 = sever, v smeri urinega kazalca)
 }
 
 /** EMA pospeška + ekstrapolacija hitrosti med vzorci. */

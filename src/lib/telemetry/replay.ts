@@ -1,14 +1,16 @@
 import { MANUAL } from '../config'
 import { haversineM } from './gps'
+import { bearingDeg } from '../physics/lateral'
 import { Smoother, type Sample } from '../physics/smoothing'
 import { now, type Source } from './types'
 
-/** CSV: stolpca t_s,speed_kmh (glava neobvezna). */
+/** CSV: t_s,speed_kmh[,heading_deg] (glava neobvezna). */
 export function parseCsv(text: string): Sample[] {
   const out: Sample[] = []
   for (const line of text.split(/\r?\n/)) {
-    const [a, b] = line.split(/[,;\t]/).map((x) => Number(x.trim()))
-    if (line.trim() && Number.isFinite(a) && Number.isFinite(b)) out.push({ t: a, v: b / 3.6 })
+    const [a, b, c] = line.split(/[,;\t]/).map((x) => (x.trim() === '' ? NaN : Number(x.trim())))
+    if (line.trim() && Number.isFinite(a) && Number.isFinite(b))
+      out.push({ t: a, v: b / 3.6, heading: Number.isFinite(c) ? c : null })
   }
   return out
 }
@@ -22,7 +24,9 @@ export function parseGpx(text: string): Sample[] {
   for (let i = 1; i < pts.length; i++) {
     const dt = pts[i].t - pts[i - 1].t
     if (dt <= 0) continue
-    out.push({ t: pts[i].t - pts[0].t, v: haversineM(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon) / dt })
+    const a = pts[i - 1]
+    const b = pts[i]
+    out.push({ t: b.t - pts[0].t, v: haversineM(a.lat, a.lon, b.lat, b.lon) / dt, heading: bearingDeg(a.lat, a.lon, b.lat, b.lon) })
   }
   return out
 }
@@ -61,7 +65,7 @@ export function replaySource(samples: Sample[]): Source {
       for (;;) {
         const ts = samples[i].t - t0 + lap * lapS
         if (ts > el) break
-        emit({ t: start + ts, v: samples[i].v })
+        emit({ t: start + ts, v: samples[i].v, heading: samples[i].heading })
         if (++i >= samples.length) {
           i = 0
           lap++

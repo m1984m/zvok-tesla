@@ -1,13 +1,15 @@
 <script lang="ts">
   import { car, type SourceKind } from './lib/state.svelte'
   import { audio } from './lib/audio/context'
-  import { setSource, shift, startLoop, stopLoop } from './lib/engine'
+  import { setSource, startLoop, stopLoop } from './lib/engine'
   import { scenes, sceneById } from './lib/scenes/registry'
   import { manualInput, type Pedal } from './lib/telemetry/manual'
   import { parseTrack } from './lib/telemetry/replay'
   import Tach from './lib/ui/Tach.svelte'
   import ShiftLights from './lib/ui/ShiftLights.svelte'
   import StartOverlay from './lib/ui/StartOverlay.svelte'
+  import GMeter from './lib/ui/GMeter.svelte'
+  import GStats from './lib/ui/GStats.svelte'
 
   const PREFS = 'pogon.prefs.v2'
   try {
@@ -15,12 +17,11 @@
     if (scenes.some((s) => s.id === p.sceneId)) car.sceneId = p.sceneId
     if (p.source) car.source = p.source
     if (typeof p.volume === 'number') car.volume = p.volume
-    if (p.mode) car.mode = p.mode
   } catch {
     /* brez shrambe */
   }
   $effect(() => {
-    const p = { sceneId: car.sceneId, source: car.source, volume: car.volume, mode: car.mode }
+    const p = { sceneId: car.sceneId, source: car.source, volume: car.volume }
     try {
       localStorage.setItem(PREFS, JSON.stringify(p))
     } catch {
@@ -88,23 +89,11 @@
     return () => document.removeEventListener('visibilitychange', onVis)
   })
 
-  // kratek odziv obvolanske ročice: barva teme ob menjavi, rdeča ob zavrnitvi
-  let flash = $state<{ side: -1 | 1; ok: boolean; n: number } | null>(null)
-  function paddle(side: -1 | 1) {
-    const before = car.denied
-    shift(side)
-    const n = (flash?.n ?? 0) + 1
-    flash = { side, ok: car.denied === before, n }
-    setTimeout(() => {
-      if (flash?.n === n) flash = null
-    }, 220)
-  }
-
   const SOURCES: [SourceKind, string, string][] = [
     ['gps', 'GPS', 'hitrost iz satelitov'],
     ['replay', 'Demo vožnja', 'posnetek, za preizkus na mestu'],
-    ['manual', 'Ročni plin', 'gumba plin in zavora'],
-  ]
+    ['manual', 'Ročni plin', 'gumba plin in zavora (razvoj)'],
+  ].filter((x) => DEV || x[0] !== 'manual') as [SourceKind, string, string][]
   const sourceLabel = $derived(SOURCES.find((s) => s[0] === car.source)?.[1] ?? '')
   const gpsState = $derived(car.source !== 'gps' ? '' : car.error ? 'err' : car.v > 0 ? 'ok' : 'wait')
 </script>
@@ -116,15 +105,10 @@
     <StartOverlay label="START" sub="Tapni za nadaljevanje" accent={scene.theme.accent} onstart={start} />
   {/if}
 
-  <button
-    class="paddle left"
-    class:hit={flash?.side === -1 && flash.ok}
-    class:deny={flash?.side === -1 && !flash.ok}
-    onpointerdown={() => paddle(-1)}
-    aria-label="Prestava dol"
-  >
-    <span class="sym">−</span><span class="cap">DOL</span>
-  </button>
+  <aside class="side left">
+    <h2>G-SILE</h2>
+    <GMeter accent={scene.theme.accent} />
+  </aside>
 
   <section class="center">
     <ShiftLights />
@@ -132,15 +116,9 @@
     {#if car.error}<p class="err">{car.error}</p>{/if}
   </section>
 
-  <button
-    class="paddle right"
-    class:hit={flash?.side === 1 && flash.ok}
-    class:deny={flash?.side === 1 && !flash.ok}
-    onpointerdown={() => paddle(1)}
-    aria-label="Prestava gor"
-  >
-    <span class="sym">+</span><span class="cap">GOR</span>
-  </button>
+  <aside class="side right">
+    <GStats />
+  </aside>
 
   <footer class="bar">
     <div class="seg engines" role="group" aria-label="Motor">
@@ -149,11 +127,6 @@
           <b>{s.name}</b><small>{s.subtitle}</small>
         </button>
       {/each}
-    </div>
-
-    <div class="seg mode" role="group" aria-label="Menjalnik">
-      <button class:on={car.mode === 'auto'} onclick={() => (car.mode = 'auto')}>AUTO</button>
-      <button class:on={car.mode === 'manual'} onclick={() => (car.mode = 'manual')}>ROČNO</button>
     </div>
 
     <label class="vol">
@@ -199,7 +172,7 @@
     position: fixed;
     inset: 0;
     display: grid;
-    grid-template-columns: clamp(96px, 9vw, 150px) minmax(0, 1fr) clamp(96px, 9vw, 150px);
+    grid-template-columns: clamp(220px, 21vw, 340px) minmax(0, 1fr) clamp(220px, 21vw, 340px);
     grid-template-rows: minmax(0, 1fr) auto;
     gap: 12px;
     padding: 14px 16px 16px;
@@ -220,35 +193,24 @@
     cursor: pointer;
   }
 
-  /* obvolanski ročici */
-  .paddle {
+  /* stranska panela */
+  .side {
     grid-row: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 10px;
+  }
+  .side.left {
     justify-content: center;
-    gap: 6px;
-    background: linear-gradient(180deg, #1a1c21, #0e0f12);
-    border-radius: 22px;
-    transition: background 0.12s;
   }
-  .paddle .sym {
-    font-size: 72px;
-    font-weight: 600;
-    line-height: 0.8;
-  }
-  .paddle .cap {
-    font-size: 18px;
+  .side h2 {
+    margin: 0;
+    font-size: 17px;
     letter-spacing: 0.25em;
     color: var(--mute);
-  }
-  .paddle.hit {
-    background: color-mix(in srgb, var(--accent) 35%, #0e0f12);
-    border-color: var(--accent);
-  }
-  .paddle.deny {
-    background: #3a0c0a;
-    border-color: #ff3b2f;
+    font-weight: 600;
+    text-align: center;
   }
 
   .center {
@@ -319,11 +281,6 @@
     font-size: 15px;
     letter-spacing: 0.02em;
   }
-  .mode button {
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-  }
   .vol {
     flex: 1;
     display: flex;
@@ -371,7 +328,7 @@
   /* ročni plin (razvoj) */
   .pedals {
     position: fixed;
-    right: calc(clamp(96px, 9vw, 150px) + 32px);
+    right: calc(clamp(220px, 21vw, 340px) + 32px);
     bottom: 110px;
     display: flex;
     gap: 10px;
@@ -442,21 +399,28 @@
     color: var(--mute);
   }
 
-  /* ozek zaslon (razvoj na telefonu) */
-  @media (max-width: 760px) {
+  /* ozek zaslon (razvoj na telefonu): stranska panela pod merilnik */
+  @media (max-width: 900px) {
     .app {
-      grid-template-columns: 72px minmax(0, 1fr) 72px;
+      position: static;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
       padding: 10px;
     }
+    .center {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .side {
+      grid-row: 2;
+    }
     .bar {
+      grid-row: 3;
       flex-wrap: wrap;
     }
     .engines button {
       min-width: 0;
       padding: 0 12px;
-    }
-    .paddle .sym {
-      font-size: 48px;
     }
   }
 </style>

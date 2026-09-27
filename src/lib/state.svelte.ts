@@ -1,5 +1,3 @@
-import type { GearMode } from './physics/gearbox'
-
 export type SourceKind = 'gps' | 'replay' | 'manual'
 
 /** En skupni reaktivni state. Izvožen je objekt; spreminjamo samo lastnosti. */
@@ -10,10 +8,13 @@ export const car = $state({
   overrun: false,
   rpm: 1000,
   gear: 1,
-  mode: 'auto' as GearMode,
   limiter: false,
-  shift: 0, // števec menjav (UI animacija)
-  denied: 0, // števec zavrnjenih ročnih menjav
+  shift: 0, // števec menjav
+  gLong: 0, // g, + pospeševanje, − zaviranje
+  gLat: 0, // g, + desni zavoj
+  peakAcc: 0,
+  peakBrake: 0,
+  peakLat: 0,
   source: 'gps' as SourceKind,
   sceneId: 'v12',
   volume: 0.8,

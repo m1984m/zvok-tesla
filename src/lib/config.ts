@@ -89,3 +89,13 @@ export const SCENE_AUDIO = {
   cityHumHz: 50,
   cityHumGain: 0.08,
 } as const
+
+export const GFORCE = {
+  g: 9.81,
+  lateralTauS: 0.5, // glajenje bočnega pospeška (GPS smer je šumna)
+  minSpeedMs: 3, // pod tem smer ni zanesljiva → bočno 0
+  maxYawRateDegS: 60, // večji skok smeri je napaka GPS
+  displayTauS: 0.15, // glajenje prikaza
+  meterMaxG: 1.2, // polmer G-merilnika
+  trailS: 2,
+} as const
